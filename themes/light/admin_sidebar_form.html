@@ -1,0 +1,31 @@
+{{define "admin_sidebar_form.html"}}
+{{if .IsNew}}
+{{template "admin_head" (adminHead "New sidebar block" true)}}
+	<h1>New sidebar block</h1>
+{{else}}
+{{template "admin_head" (adminHead "Edit sidebar block" true)}}
+	<h1>Edit sidebar block</h1>
+{{end}}
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	<form method="post" action="{{if .IsNew}}/admin/sidebar/new{{else}}/admin/sidebar/{{.Block.ID}}/edit{{end}}" class="admin-form">
+		<label>Title
+			<input type="text" name="title" value="{{.Title}}" required autofocus>
+		</label>
+		<label>Content (Markdown)
+			<textarea name="content_md" rows="10">{{.ContentMD}}</textarea>
+			<span class="hint">Rendered to HTML when you save — not re-rendered on every page view.</span>
+		</label>
+		<label>Sort order
+			<input type="number" name="sort_order" value="{{.SortOrder}}">
+			<span class="hint">Lower numbers appear first.</span>
+		</label>
+		<label class="checkbox">
+			<input type="checkbox" name="enabled" {{if .Enabled}}checked{{end}}> Enabled (shown on the site)
+		</label>
+		<div class="admin-actions">
+			<button class="btn" type="submit">{{if .IsNew}}Create block{{else}}Save changes{{end}}</button>
+			<a class="btn btn-secondary" href="/admin/sidebar">Cancel</a>
+		</div>
+	</form>
+{{template "admin_foot" .}}
+{{end}}

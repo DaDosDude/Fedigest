@@ -1,0 +1,33 @@
+{{define "admin_category_form.html"}}
+{{if .IsNew}}
+{{template "admin_head" (adminHead "New category" true)}}
+	<h1>New category</h1>
+{{else}}
+{{template "admin_head" (adminHead "Edit category" true)}}
+	<h1>Edit category</h1>
+{{end}}
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	<form method="post" action="{{if .IsNew}}/admin/categories/new{{else}}/admin/categories/{{.Category.ID}}/edit{{end}}" class="admin-form">
+		<label>Name
+			<input type="text" name="name" value="{{.Name}}" required autofocus>
+		</label>
+		<label>Slug
+			<input type="text" name="slug" value="{{.Slug}}" placeholder="auto-generated from name if left blank">
+			<span class="hint">Used in the URL, e.g. /c/your-slug: lower-case letters, digits and dashes (anything else becomes a dash). Leave blank to generate it from the name.</span>
+		</label>
+		<label>Sort order
+			<input type="number" name="sort_order" value="{{.SortOrder}}"{{if .IsNew}} placeholder="last"{{end}}>
+			<span class="hint">Lower numbers appear first in the menu.{{if .IsNew}} Leave blank to add it at the end.{{end}} You can also drag categories into order on the categories page.</span>
+		</label>
+		<label class="checkbox">
+			<input type="checkbox" name="show_on_frontpage" {{if .ShowOnFrontpage}}checked{{end}}>
+			Show on frontpage
+			<span class="hint">Untick to keep this category's picks off the frontpage and main RSS feed. They still show on the category's own page (which stays in the menu), its feed, and in search.</span>
+		</label>
+		<div class="admin-actions">
+			<button class="btn" type="submit">{{if .IsNew}}Create category{{else}}Save changes{{end}}</button>
+			<a class="btn btn-secondary" href="/admin/categories">Cancel</a>
+		</div>
+	</form>
+{{template "admin_foot" .}}
+{{end}}

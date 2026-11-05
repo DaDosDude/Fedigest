@@ -1,0 +1,31 @@
+{{define "admin_sidebar.html"}}
+{{template "admin_head" (adminHead "Sidebar" true)}}
+	<div class="admin-toolbar">
+		<h1>Sidebar</h1>
+		<a class="btn" href="/admin/sidebar/new">New block</a>
+	</div>
+	<p class="hint">Blocks appear beside the main content on desktop, below it on mobile, in the order below. Disabled blocks are kept but not shown.</p>
+	{{if not .Blocks}}
+		<p class="admin-empty">No sidebar blocks yet.</p>
+	{{else}}
+	<table class="admin-table">
+		<thead><tr><th>Title</th><th>Order</th><th>Enabled</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+		<tbody>
+			{{range .Blocks}}
+			<tr>
+				<td>{{.Title}}</td>
+				<td>{{.SortOrder}}</td>
+				<td>{{if .Enabled}}Yes{{else}}No{{end}}</td>
+				<td class="admin-row-actions">
+					<a href="/admin/sidebar/{{.ID}}/edit">Edit</a>
+					<form method="post" action="/admin/sidebar/{{.ID}}/delete" onsubmit="return confirm('Delete this sidebar block?');">
+						<button type="submit" class="btn-link">Delete</button>
+					</form>
+				</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+	{{end}}
+{{template "admin_foot" .}}
+{{end}}

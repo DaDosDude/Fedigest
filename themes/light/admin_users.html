@@ -1,0 +1,37 @@
+{{define "admin_users.html"}}
+{{template "admin_head" (adminHead "Users" true)}}
+	<div class="admin-toolbar">
+		<h1>Users</h1>
+		<a class="btn" href="/admin/users/new">New user</a>
+	</div>
+	<p class="admin-empty">Registration is closed — this is the only way accounts get created.</p>
+	{{if .Error}}<p class="admin-error" role="alert">{{.Error}}</p>{{end}}
+	{{if .Notice}}<p class="admin-notice" role="status">{{.Notice}}</p>{{end}}
+	<table class="admin-table">
+		<thead><tr><th class="hide-mobile"><span class="visually-hidden">Avatar</span></th><th>Username</th><th class="hide-mobile">Display name</th><th class="hide-mobile">Role</th><th class="hide-mobile">Email</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+		<tbody>
+			{{range .Users}}
+			<tr>
+				<td class="hide-mobile"><img class="admin-avatar" src="{{userAvatar .}}" alt="" width="32" height="32"></td>
+				<td>{{.Username}}</td>
+				<td class="hide-mobile">{{.DisplayName.String}}</td>
+				<td class="hide-mobile">{{if eq (print .Role) "admin"}}Admin{{else}}User{{end}}</td>
+				<td class="hide-mobile">{{if .Email.Valid}}{{.Email.String}}{{else}}<span class="admin-empty">none</span>{{end}}</td>
+				<td class="admin-row-actions">
+					<a href="/admin/users/{{.ID}}/edit">Edit</a>
+					<form method="post" action="/admin/users/{{.ID}}/reset-password">
+						<input type="password" name="new_password" placeholder="new password" aria-label="New password for {{.Username}}" autocomplete="new-password" required>
+						<button type="submit" class="btn-link">Reset password</button>
+					</form>
+					{{if ne .ID $.Me.ID}}
+					<form method="post" action="/admin/users/{{.ID}}/delete" onsubmit="return confirm('Delete {{.Username}}? Their picks will be unpublished and moved to your account.');">
+						<button type="submit" class="btn-link">Delete</button>
+					</form>
+					{{end}}
+				</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+{{template "admin_foot" .}}
+{{end}}

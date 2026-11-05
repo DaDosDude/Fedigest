@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    container_name: fedigest
+    env_file: .env
+    # Localhost only; a reverse proxy on the host terminates TLS.
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # SQLite DB + session secret: the app's persistent state. Back it up.
+      - dbdata:/app/data
+      # Uploaded images, avatars and site icon.
+      - uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  dbdata:
+  uploads:

@@ -1,0 +1,43 @@
+{{define "admin_themes.html"}}
+{{template "admin_head" (adminHead "Themes" true)}}
+	<h1>Themes</h1>
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	<p class="hint">Built-in themes come with Fedigest. Make your own by copying one and editing its stylesheet; it's available right away as the site theme (Site settings) and in the visitors' theme menu. A light theme with a dark mode partner (or the other way round) follows the visitor's device setting.</p>
+	<table class="admin-table">
+		<thead><tr><th>Name</th><th>Type</th><th>Light / dark</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+		<tbody>
+			{{range .Themes}}
+			<tr>
+				<td>{{.Name}}{{if .Site}} <span class="admin-badge">Site theme</span>{{end}}</td>
+				<td>{{if .Custom}}Custom{{if .BasedOn}} <span class="hint">(from {{.BasedOn}})</span>{{end}}{{else}}Built in{{end}}</td>
+				<td>{{if eq .Mode "light"}}Light{{if .Partner}}, dark mode: {{.Partner}}{{end}}{{else if eq .Mode "dark"}}Dark{{if .Partner}}, light mode: {{.Partner}}{{end}}{{else}}Fixed{{end}}</td>
+				<td class="admin-row-actions">
+					<a href="/admin/themes/{{.Name}}/edit">Edit</a>
+					<a href="/themes/{{.Name}}/style.css" target="_blank" rel="noopener">View CSS</a>
+					{{if .Custom}}
+					<form method="post" action="/admin/themes/{{.Name}}/delete" onsubmit="return confirm('Delete this theme?');">
+						<button type="submit" class="btn-link">Delete</button>
+					</form>
+					{{end}}
+				</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+
+	<h2>New theme</h2>
+	<form method="post" action="/admin/themes/new" class="admin-form">
+		<label>Name
+			<input type="text" name="name" value="{{.Name}}" placeholder="my-theme" required pattern="[a-z0-9][a-z0-9\-]{0,39}">
+			<span class="hint">Lowercase letters, digits and dashes. Shown as "My theme" in the visitors' menu.</span>
+		</label>
+		<label>Start from
+			<select name="from">
+				{{range .Themes}}<option value="{{.Name}}">{{.Name}}</option>{{end}}
+			</select>
+			<span class="hint">Its stylesheet is copied into the new theme. The colours are the variables at the top.</span>
+		</label>
+		<div class="admin-actions"><button class="btn" type="submit">Create and edit</button></div>
+	</form>
+{{template "admin_foot" .}}
+{{end}}

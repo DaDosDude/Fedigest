@@ -1,0 +1,25 @@
+{{define "admin_category_delete.html"}}
+{{template "admin_head" (adminHead "Delete category" true)}}
+	<h1>Delete category "{{.Category.Name}}"?</h1>
+	<p class="admin-error">{{len .Sources}} source{{if ne (len .Sources) 1}}s{{end}} still post{{if eq (len .Sources) 1}}s{{end}} into this category. Deleting it deletes {{if eq (len .Sources) 1}}that source{{else}}those sources{{end}} too. Picks they already created stay.</p>
+	<table class="admin-table">
+		<thead><tr><th>Platform</th><th>Instance</th><th>Watching</th><th>Mode</th></tr></thead>
+		<tbody>
+			{{range .Sources}}
+			<tr>
+				<td>{{.Platform}}</td>
+				<td>{{.InstanceURL}}</td>
+				<td>{{if eq (print .WatchType) "instance"}}Whole instance <span class="hint">(local feed)</span>{{else}}{{.WatchTarget.String}} <span class="hint">({{if eq (print .WatchType) "person"}}person{{else}}community{{end}})</span>{{end}}</td>
+				<td>{{.Mode}}</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+	<p class="hint">To keep a source, cancel and move it to another category on its edit page first.</p>
+	<form method="post" action="/admin/categories/{{.Category.ID}}/delete" class="admin-row-actions">
+		<input type="hidden" name="delete_sources" value="1">
+		<button type="submit" class="btn btn-danger">Delete category and sources</button>
+		<a class="btn" href="/admin/categories">Cancel</a>
+	</form>
+{{template "admin_foot" .}}
+{{end}}

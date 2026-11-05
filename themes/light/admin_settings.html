@@ -1,0 +1,63 @@
+{{define "admin_settings.html"}}
+{{template "admin_head" (adminHead "Site settings" true)}}
+	<h1>Site settings</h1>
+	{{if .Error}}<p class="admin-error" role="alert">{{.Error}}</p>{{end}}
+	<form method="post" action="/admin/settings" class="admin-form" enctype="multipart/form-data">
+		<label>Site name
+			<input type="text" name="site_name" value="{{.Settings.SiteName}}" required>
+			<span class="hint">Shown in the header, page titles, link previews and the RSS feed.</span>
+		</label>
+
+		<label>Auto post label
+			<input type="text" name="auto_post_label" value="{{.Settings.AutoPostLabel}}" required>
+			<span class="hint">Shown on the byline of an auto-ingested pick in place of a curator's name (see Sources / Auto-ingest) — there's no separate bot account, this is just the label.</span>
+		</label>
+
+		<label class="checkbox">
+			<input type="checkbox" name="multi_category"{{if .Settings.MultiCategory}} checked{{end}}>
+			Allow multiple categories per pick and source
+			<span class="hint">Adds "Also show in" checkboxes to picks and sources. Turning it off hides them; extra categories already set stay in effect.</span>
+		</label>
+
+		<label>Site theme
+			<select name="theme">
+				{{$current := .Settings.Theme}}
+				{{range .Themes}}
+				<option value="{{.}}" {{if eq . $current}}selected{{end}}>{{themeLabel .}}</option>
+				{{end}}
+			</select>
+		</label>
+
+		<fieldset class="extra-categories">
+			<legend>Themes visitors can choose</legend>
+			{{range .Themes}}<label class="checkbox"><input type="checkbox" name="visitor_theme" value="{{.}}"{{if index $.VisitorThemes .}} checked{{end}}> {{themeLabel .}}</label>{{end}}
+			<span class="hint">Ticked themes appear in a theme menu in the site's footer; a visitor's choice is remembered in their browser. The site theme above is always available. Tick none (or only the site theme) to hide the menu.</span>
+		</fieldset>
+
+		<fieldset>
+			<legend>Site icon</legend>
+			{{if and .Settings.IconPath.Valid (uploadFileExists .Settings.IconPath.String)}}
+			<div class="admin-current-image">
+				<img src="/uploads/{{.Settings.IconPath.String}}" alt="Current site icon" class="avatar-preview">
+				<label class="checkbox"><input type="checkbox" name="remove_icon"> Remove current icon</label>
+			</div>
+			{{else if .Settings.IconPath.Valid}}
+				<p class="hint">The saved icon file is missing on disk — showing the bundled default until you upload a new one.</p>
+			{{end}}
+			<label>Upload a new icon
+				<input type="file" name="icon_upload" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
+				<span class="hint">Shown next to the site name in the header and as the browser tab icon. PNG, JPEG, GIF, WebP or ICO, up to 10 MB; a square image works best.</span>
+			</label>
+		</fieldset>
+
+		<label>Privacy page contact
+			<input type="text" name="privacy_contact" value="{{.PrivacyContact}}" placeholder="Contact the people who run this site.">
+			<span class="hint">How visitors reach you with privacy questions, shown at the end of the <a href="/privacy" target="_blank" rel="noopener">privacy page</a>. Markdown links work. The rest of that page describes what Fedigest does and can't be edited.</span>
+		</label>
+
+		<div class="admin-actions">
+			<button class="btn" type="submit">Save settings</button>
+		</div>
+	</form>
+{{template "admin_foot" .}}
+{{end}}

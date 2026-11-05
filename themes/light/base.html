@@ -1,0 +1,310 @@
+{{/* head takes a seoHead. */}}
+{{define "head"}}<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	{{if .ColorScheme}}<meta name="color-scheme" content="{{.ColorScheme}}">{{end}}
+	<title>{{if and .Title (ne .Title .SiteName)}}{{.Title}} · {{end}}{{.SiteName}}</title>
+	{{if .Description}}<meta name="description" content="{{.Description}}">{{end}}
+	{{if .Canonical}}<link rel="canonical" href="{{.Canonical}}">{{end}}
+	{{if .NoIndex}}<meta name="robots" content="noindex">{{end}}
+
+	<meta property="og:type" content="{{.OGType}}">
+	<meta property="og:site_name" content="{{.SiteName}}">
+	<meta property="og:title" content="{{.Title}}">
+	{{if .Description}}<meta property="og:description" content="{{.Description}}">{{end}}
+	{{if .Canonical}}<meta property="og:url" content="{{.Canonical}}">{{end}}
+	{{if .OGImage}}<meta property="og:image" content="{{.OGImage}}">{{end}}
+	<meta name="twitter:card" content="{{if .OGImage}}summary_large_image{{else}}summary{{end}}">
+	<meta name="twitter:title" content="{{.Title}}">
+	{{if .Description}}<meta name="twitter:description" content="{{.Description}}">{{end}}
+	{{if .OGImage}}<meta name="twitter:image" content="{{.OGImage}}">{{end}}
+
+	{{if siteIcon}}<link rel="icon" href="{{siteIcon}}">{{end}}
+	<link rel="alternate" type="application/rss+xml" title="{{if .FeedTitle}}{{.FeedTitle}}{{else}}{{.SiteName}}{{end}}" href="{{if .FeedURL}}{{.FeedURL}}{{else}}/feed.xml{{end}}">
+	{{range .ThemeSheets}}<link rel="stylesheet" href="{{.Href}}"{{if .Media}} media="{{.Media}}"{{end}}>
+	{{end}}
+	<style>
+		/* Layout only, so it holds for every theme, custom ones included. */
+		.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+		.pick-edit-link, .post-edit-link { display: inline-block; font-size: 0.85rem; }
+		.pick-card .pick-edit-link { margin-top: 0.4rem; }
+		.pick-card .pick-card-link-out + .pick-edit-link { margin-left: 0.75rem; }
+		.footer-powered, .footer-links { white-space: nowrap; }
+		@media (max-width: 480px) { .footer-powered { display: block; } .footer-sep-group { display: none; } }
+		.pick-read-more { display: inline-block; margin: 0.4rem 0.75rem 0 0; font-size: 0.9rem; font-weight: 600; color: var(--color-accent); }
+		.pick-card-body:hover .pick-read-more, .pick-card-body:focus-visible .pick-read-more { text-decoration: underline; }
+		.skip-link { position: absolute; left: -9999px; top: 0; }
+		.skip-link:focus { left: 1rem; top: 1rem; z-index: 1001; padding: 0.5rem 1rem; background: var(--color-surface); color: var(--color-text); border: 2px solid var(--color-accent); border-radius: var(--radius); }
+		{{if or .ThemeOptions .ThemeHasDark}}
+		/* The theme picker gets its own line and never widens the page. */
+		.theme-picker { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.5rem 1rem; margin: 0.75rem auto 0; max-width: 100%; }
+		.theme-picker label { min-width: 0; max-width: 100%; }
+		.theme-picker select { min-width: 0; width: min(17rem, 70vw); }
+		.theme-picker .theme-black { white-space: nowrap; }
+		.theme-picker button { padding: 0.2rem 0.8rem; }
+		{{end}}
+	</style>
+	{{.JSONLD}}
+	<script>
+		// Marks a card image as cropped once the CSS max-height actually cut
+		// it off, which the server can't know, to show "View full image".
+		// Defined here, before any image can finish loading.
+		function fedigestCheckImageCrop(img) {
+			if (!img.naturalWidth || !img.clientWidth) return;
+			var heightWithoutCrop = img.clientWidth * img.naturalHeight / img.naturalWidth;
+			if (heightWithoutCrop > img.clientHeight + 1) {
+				var wrap = img.closest('.pick-card-image-wrap');
+				if (wrap) wrap.classList.add('is-cropped');
+			}
+		}
+	</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+{{end}}
+
+{{/* site_header takes page data with SiteName, Categories and
+     CurrentUser. The script below hides categories that don't fit their
+     row limit and shows "More…"; without JS they all wrap. */}}
+{{define "site_header"}}
+	<header class="site-header">
+		<a class="site-logo" href="/">{{if siteIcon}}<img src="{{siteIcon}}" alt="" class="site-logo-icon" width="28" height="28">{{end}}{{.SiteName}}</a>
+		<nav class="site-nav">
+			<div class="nav-cats" id="nav-cats">{{range .Categories}}<a href="/c/{{.Slug}}">{{.Name}}</a>{{end}}<a href="/categories" class="nav-more">More…</a></div>
+			<div class="nav-tools">
+				<form method="get" action="/search" class="search-form search-form-nav">
+					<input type="search" name="q" placeholder="Search…" aria-label="Search">
+				</form>
+				{{/* Mobile-only stand-in for the search form. */}}
+				<a href="/search" class="search-icon-link" aria-label="Search">
+					<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="6.5"></circle><line x1="18" y1="18" x2="13.5" y2="13.5"></line></svg>
+				</a>
+				{{if .CurrentUser}}<a href="/admin/picks">Admin</a>{{else}}<a href="/login">Log in</a>{{end}}
+			</div>
+		</nav>
+	</header>
+	<script>
+	(function () {
+		var box = document.getElementById('nav-cats');
+		if (!box) return;
+		var more = box.querySelector('.nav-more');
+		var links = [].slice.call(box.querySelectorAll('a:not(.nav-more)'));
+		var tools = document.querySelector('.site-nav .nav-tools');
+		// Rows taken by the visible items: on phones the search icon and
+		// Admin/Log in flow in the same rows as the categories, so they
+		// count too. Tops within 10px of each other are the same row
+		// (items of different heights are centred on a row).
+		function rows() {
+			var els = [].slice.call(box.children);
+			if (window.innerWidth <= 720 && tools) els = els.concat([].slice.call(tools.children));
+			var tops = [];
+			els.forEach(function (el) {
+				if (getComputedStyle(el).display === 'none') return;
+				tops.push(el.getBoundingClientRect().top);
+			});
+			tops.sort(function (a, b) { return a - b; });
+			var n = 0, last = -1e9;
+			tops.forEach(function (t) { if (t - last > 10) { n++; last = t; } });
+			return n;
+		}
+		function maxRows() {
+			if (window.innerWidth <= 720) return 2;
+			var nav = box.parentNode;
+			return nav.clientWidth - (tools ? tools.offsetWidth : 0) < 320 ? 2 : 1;
+		}
+		function fit() {
+			links.forEach(function (a) { a.style.display = ''; });
+			more.style.display = 'none';
+			var max = maxRows();
+			if (rows() <= max) return;
+			more.style.display = 'inline';
+			for (var i = links.length - 1; i >= 0 && rows() > max; i--) links[i].style.display = 'none';
+		}
+		var queued = false;
+		function schedule() {
+			if (queued) return;
+			queued = true;
+			requestAnimationFrame(function () { queued = false; fit(); });
+		}
+		fit();
+		window.addEventListener('resize', schedule);
+		window.addEventListener('load', schedule);
+		if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+	})();
+	</script>
+{{end}}
+
+{{define "pick_card"}}
+<li class="pick-card{{if .Pinned}} pick-card-pinned{{end}}">
+	{{/* The image sits between two links, not inside one, since its
+	"View full image" button can't be nested in a link. */}}
+	<a href="/p/{{.ID}}-{{.Slug}}" class="pick-card-body pick-card-head">
+		{{if .Pinned}}<span class="pinned-label">📌 Pinned</span>{{end}}
+		<h2>{{.Title}}</h2>
+		{{template "pick_byline" .}}
+	</a>
+	{{$img := .DisplayImage "/uploads"}}
+	{{if $img}}
+	<div class="pick-card-image-wrap">
+		<a href="/p/{{.ID}}-{{.Slug}}">
+			<img src="{{$img}}" alt="{{.EffectiveAltText}}" class="pick-card-image" loading="lazy" onerror="this.style.display='none'" onload="fedigestCheckImageCrop(this)">
+		</a>
+		<div class="pick-card-image-gradient"></div>
+		<button type="button" class="pick-card-image-expand" data-lightbox-src="{{$img}}" data-lightbox-alt="{{.EffectiveAltText}}">View full image &#10530;</button>
+	</div>
+	{{end}}
+	<a href="/p/{{.ID}}-{{.Slug}}" class="pick-card-body">
+		<div class="pick-card-excerpt">{{excerptHTML .DisplayExcerpt}}</div>
+		{{if .HasMore}}<span class="pick-read-more">Continue reading →</span>{{end}}
+		{{if and (eq (print .SourceType) "fedi") .CommentCount.Valid}}
+			<span class="pick-comment-count">{{plural .CommentCount.Int64 "comment" "comments"}}</span>
+		{{end}}
+	</a>
+	{{template "pick_card_link" .}}
+	{{if .CanEdit}}<a class="pick-edit-link" href="/admin/picks/{{.ID}}/edit">Edit<span class="visually-hidden"> {{.Title}}</span></a>{{end}}
+</li>
+{{end}}
+
+{{define "foot"}}
+	<footer class="site-footer">
+		<span class="footer-powered">Powered by <a href="https://fedigest.org">Fedigest {{version}}</a></span><span class="footer-sep footer-sep-group" aria-hidden="true"> | </span><span class="footer-links"><a href="{{sourceURL}}">Source</a><span class="footer-sep" aria-hidden="true"> | </span><a href="{{if .Head.FeedURL}}{{.Head.FeedURL}}{{else}}/feed.xml{{end}}">RSS</a><span class="footer-sep" aria-hidden="true"> | </span><a href="/privacy">Privacy</a></span>
+		{{if or .Head.ThemeOptions .Head.ThemeHasDark}}
+		<form method="get" action="/theme-choice" class="theme-picker">
+			<input type="hidden" name="back" value="{{.Head.ThemeBack}}">
+			{{if .Head.ThemeOptions}}
+			<label>Theme
+				<select name="theme" data-autosubmit>
+					{{range .Head.ThemeOptions}}{{if .GroupStart}}<optgroup label="{{.Group}}">{{end}}<option value="{{.Name}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{if .GroupEnd}}</optgroup>{{end}}{{end}}
+				</select>
+			</label>
+			{{end}}
+			{{if .Head.ThemeHasDark}}
+			<input type="hidden" name="has_black" value="1">
+			<label class="theme-black"><input type="checkbox" name="black" value="1" onchange="this.form.submit()"{{if .Head.ThemeBlack}} checked{{end}}> Pure black (AMOLED)</label>
+			{{end}}
+			<button type="submit" data-apply>Apply</button>
+		</form>
+		{{end}}
+	</footer>
+	<div id="fedigest-lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Full image" onclick="fedigestCloseLightbox()">
+		<button type="button" class="lightbox-close" onclick="fedigestCloseLightbox()" aria-label="Close">&times;</button>
+		<img id="fedigest-lightbox-img" alt="" onclick="event.stopPropagation()">
+	</div>
+	<script>
+		{{template "autosubmit_js"}}
+
+		// A card image that finished loading before this script ran.
+		document.querySelectorAll('img.pick-card-image').forEach(function (img) {
+			if (img.complete) fedigestCheckImageCrop(img);
+		});
+
+		let fedigestLightboxOpener = null;
+		function fedigestOpenLightbox(src, alt) {
+			const lb = document.getElementById('fedigest-lightbox');
+			const img = document.getElementById('fedigest-lightbox-img');
+			if (!lb || !img || !src) return;
+			fedigestLightboxOpener = document.activeElement;
+			img.src = src;
+			img.alt = alt || '';
+			lb.classList.add('open');
+			document.body.style.overflow = 'hidden';
+			lb.querySelector('.lightbox-close').focus();
+		}
+		// Delegated, reading data-* attributes, to avoid building JS string
+		// literals inside HTML attributes.
+		document.addEventListener('click', function (e) {
+			const btn = e.target.closest('.pick-card-image-expand');
+			if (!btn) return;
+			e.preventDefault();
+			e.stopPropagation();
+			fedigestOpenLightbox(btn.dataset.lightboxSrc, btn.dataset.lightboxAlt);
+		});
+		function fedigestCloseLightbox() {
+			const lb = document.getElementById('fedigest-lightbox');
+			if (!lb || !lb.classList.contains('open')) return;
+			lb.classList.remove('open');
+			document.getElementById('fedigest-lightbox-img').removeAttribute('src');
+			document.body.style.overflow = '';
+			if (fedigestLightboxOpener) fedigestLightboxOpener.focus();
+		}
+		document.addEventListener('keydown', function (e) {
+			const lb = document.getElementById('fedigest-lightbox');
+			if (!lb || !lb.classList.contains('open')) return;
+			if (e.key === 'Escape') fedigestCloseLightbox();
+			// The close button is the only control while it's open.
+			if (e.key === 'Tab') { e.preventDefault(); lb.querySelector('.lightbox-close').focus(); }
+		});
+
+		// A card's spoiler placeholder links to the post with
+		// "#spoiler=<title>"; on the post page that hash opens the matching
+		// spoiler (or the first) and scrolls to it.
+		document.addEventListener('click', function (e) {
+			const card = e.target.closest('.spoiler-card');
+			if (!card) return;
+			const link = card.closest('a');
+			if (!link) return;
+			e.preventDefault();
+			window.location.href = link.href.split('#')[0] + '#spoiler=' + encodeURIComponent(card.dataset.spoiler || '');
+		});
+		(function () {
+			const m = window.location.hash.match(/^#spoiler=(.*)$/);
+			if (!m) return;
+			let title = '';
+			try { title = decodeURIComponent(m[1]); } catch (e) { /* malformed hash: fall back to the first spoiler */ }
+			const spoilers = Array.from(document.querySelectorAll('.post article details.spoiler'));
+			const target = spoilers.find(d => d.querySelector('summary').textContent.trim() === title) || spoilers[0];
+			if (!target) return;
+			target.open = true;
+			target.scrollIntoView({ block: 'center' });
+		})();
+	</script>
+</body>
+</html>
+{{end}}
+
+{{/* pick_byline takes a pickCard or postPageData. Plain text, no links,
+     since cards are already links. Auto-ingested picks show the
+     configurable auto-post label rather than the source admin's name. */}}
+{{define "pick_byline"}}
+<div class="pick-byline">
+	{{if .AutoIngested}}
+	{{/* Auto-ingested: the admin-set label and the default icon. */}}
+	<img src="/static/default-icon.png" alt="" class="byline-avatar" width="20" height="20">
+	<span class="byline-curator">By {{autoPostLabel}} <span class="byline-date">{{.DisplayDate}}</span>{{if .Category}} in {{.Category.Name}}{{range .Extra}}, {{.Name}}{{end}}{{end}}</span>
+	{{else if .Curator}}
+	<img src="{{userAvatar .Curator}}" alt="" class="byline-avatar" width="20" height="20">
+	<span class="byline-curator">By {{.Curator.DisplayNameOrUsername}} <span class="byline-date">{{.DisplayDate}}</span>{{if .Category}} in {{.Category.Name}}{{range .Extra}}, {{.Name}}{{end}}{{end}}</span>
+	{{end}}
+	{{if eq (print .SourceType) "fedi"}}
+		{{if or .OriginalAuthor.Valid .OriginalCommunity.Valid}}
+		<span class="byline-original">Original post{{if .OriginalAuthor.Valid}} by {{.OriginalAuthor.String}}{{end}}{{with .OriginalDisplayDate}} <span class="byline-date">{{.}}</span>{{end}}{{if .OriginalCommunity.Valid}} on {{.OriginalCommunity.String}}{{end}}</span>
+		{{end}}
+	{{end}}
+</div>
+{{end}}
+
+{{/* sidebar takes the enabled []*models.SidebarBlock. */}}
+{{define "sidebar_blocks"}}
+	{{range .}}
+	<div class="sidebar-block">
+		<h2>{{.Title}}</h2>
+		{{safeHTML .ContentHTML.String}}
+	</div>
+	{{end}}
+{{end}}
+
+{{/* pagination takes .Page (1-indexed), .HasNext (page was full, no
+     COUNT query), .BasePath and .Query (kept when paging search). */}}
+{{define "pagination"}}
+{{if or (gt .Page 1) .HasNext}}
+<nav class="pagination">
+	{{if gt .Page 1}}<a href="{{.BasePath}}?page={{sub .Page 1}}{{if .Query}}&q={{.Query | urlquery}}{{end}}" rel="prev">&larr; Newer</a>{{end}}
+	{{if .HasNext}}<a href="{{.BasePath}}?page={{add .Page 1}}{{if .Query}}&q={{.Query | urlquery}}{{end}}" rel="next">Older &rarr;</a>{{end}}
+</nav>
+{{end}}
+{{end}}
+
+{{/* A link post's article, outside the card's link since links can't nest. */}}
+{{define "pick_card_link"}}{{if .LinkHost}}<a class="pick-card-link-out" href="{{.LinkURL.String}}" rel="noopener nofollow">&#128279; {{.LinkHost}} &#8599;</a>{{end}}{{end}}

@@ -1,0 +1,58 @@
+{{define "admin_user_form.html"}}
+{{if .IsNew}}
+{{template "admin_head" (adminHead "New user" true)}}
+	<h1>New user</h1>
+{{else}}
+{{template "admin_head" (adminHead "Edit user" true)}}
+	<h1>Edit user</h1>
+{{end}}
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	<form method="post" action="{{if .IsNew}}/admin/users/new{{else}}/admin/users/{{.User.ID}}/edit{{end}}" class="admin-form" enctype="multipart/form-data">
+		<label>Username
+			<input type="text" name="username" value="{{.Username}}" required autofocus>
+		</label>
+		<label>Display name
+			<input type="text" name="display_name" value="{{.DisplayName}}">
+			<span class="hint">Shown on bylines. Falls back to username if left blank.</span>
+		</label>
+		<label>Email
+			<input type="email" name="email" value="{{.Email}}">
+			<span class="hint">Optional. Only needed if this user should get email password-reset links.</span>
+		</label>
+		{{if .IsNew}}
+		<label>Initial password
+			<input type="password" name="password" required>
+			<span class="hint">The user can change this themselves once logged in.</span>
+		</label>
+		{{end}}
+		{{if not .IsNew}}
+		<fieldset>
+			<legend>Avatar</legend>
+			{{template "avatar_fields" .User}}
+		</fieldset>
+		{{end}}
+		<label>Role
+			<select name="role">
+				<option value="user" {{if eq .Role "user"}}selected{{end}}>User — can create and manage their own picks</option>
+				<option value="admin" {{if eq .Role "admin"}}selected{{end}}>Admin — full access</option>
+			</select>
+		</label>
+		<div class="admin-actions">
+			<button class="btn" type="submit">{{if .IsNew}}Create user{{else}}Save changes{{end}}</button>
+			<a class="btn btn-secondary" href="/admin/users">Cancel</a>
+		</div>
+	</form>
+	{{if and (not .IsNew) (not .IsSelf)}}
+	<div class="admin-danger-zone">
+		<h2>Delete user</h2>
+		<p>Deleting this account logs them out and unpublishes all of their picks (they become drafts under your account, so you can review, republish or delete them). This can't be undone.</p>
+		<form method="post" action="/admin/users/{{.User.ID}}/delete" onsubmit="return confirm('Delete {{.User.Username}}? Their picks will be unpublished and moved to your account.');">
+			<button type="submit" class="btn btn-danger">Delete {{.User.Username}}</button>
+		</form>
+	</div>
+	{{end}}
+	{{if not .IsNew}}
+	<p class="hint">To change this user's password, use "Reset password" on the <a href="/admin/users">users list</a> instead.</p>
+	{{end}}
+{{template "admin_foot" .}}
+{{end}}

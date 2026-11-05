@@ -1,0 +1,15 @@
+{{define "categories.html"}}
+{{template "head" .Head}}
+{{template "site_header" .}}
+	<div class="layout">
+		<main id="main" class="site-main">
+			<h1>Categories</h1>
+			{{if not .Categories}}<p class="empty">No categories yet.</p>{{end}}
+			<ul class="category-index">
+				{{range .Categories}}<li><a href="/c/{{.Slug}}">{{.Name}}</a></li>{{end}}
+			</ul>
+		</main>
+		<aside class="sidebar">{{template "sidebar_blocks" .SidebarBlocks}}</aside>
+	</div>
+{{template "foot" .}}
+{{end}}

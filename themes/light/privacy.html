@@ -1,0 +1,14 @@
+{{define "privacy.html"}}
+{{template "head" .Head}}
+{{template "site_header" .}}
+	<div class="layout">
+		<main id="main" class="site-main">
+			<article class="post page-text">
+				<h1>Privacy</h1>
+				<div class="post-body">{{.Content}}</div>
+			</article>
+		</main>
+		<aside class="sidebar">{{template "sidebar_blocks" .SidebarBlocks}}</aside>
+	</div>
+{{template "foot" .}}
+{{end}}

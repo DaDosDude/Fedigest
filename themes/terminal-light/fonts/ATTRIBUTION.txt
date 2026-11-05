@@ -1,0 +1,7 @@
+"Px437 IBM VGA 8x16" (ibm-vga-8x16.woff) is from the Ultimate Oldschool
+PC Font Pack v2.2 (https://int10h.org/oldschool-pc-fonts/), (c) 2016-2020
+VileR, licensed CC BY-SA 4.0. Full license text in
+IBM-VGA-8x16-LICENSE.txt.
+
+Obtained via the @monowind/themes npm package (MIT), which redistributes
+this same font file unmodified.

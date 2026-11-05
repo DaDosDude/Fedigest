@@ -1,0 +1,130 @@
+{{define "admin_picks.html"}}
+{{template "admin_head" (adminHead "Picks" .IsAdmin)}}
+	<div class="admin-toolbar">
+		<h1>{{if eq .CurrentUser.Role "admin"}}All picks{{else}}My picks{{end}}</h1>
+		<a class="btn" href="/admin/picks/new">New pick</a>
+	</div>
+	{{if .IsAdmin}}
+	<details class="admin-maintenance"{{if .RefreshStatus}} open{{end}}>
+		<summary>Refresh metadata for all picks</summary>
+		<p class="hint">Only needed after a Fedigest update adds new details to fedi picks (like the original post date or a link post's link). This re-fetches every fedi pick from its source and fills in only the details that are still empty. Titles, excerpts, bodies, images and anything you've edited are never changed. It runs in the background and can take a few minutes.</p>
+		{{if .RefreshStatus}}<p class="admin-maintenance-status">{{with .RefreshFinished}}Last run <time class="local-time" datetime="{{.}}">{{.}}</time>: {{end}}{{.RefreshStatus}}</p>{{end}}
+		<form method="post" action="/admin/picks/refresh-metadata">
+			<button type="submit" class="btn btn-secondary"{{if .RefreshRunning}} disabled{{end}}>{{if .RefreshRunning}}Refreshing…{{else}}Refresh metadata now{{end}}</button>
+		</form>
+	</details>
+	{{end}}
+	{{if and .Unavailable (ne .UnavailFilter "yes")}}
+	<p class="admin-warning">{{.Unavailable}} pick{{if ne .Unavailable 1}}s{{end}} can't reach {{if eq .Unavailable 1}}its{{else}}their{{end}} original post anymore (deleted, or the instance is down). <a href="{{.UnavailableURL}}">Show {{if eq .Unavailable 1}}it{{else}}them{{end}}</a></p>
+	{{end}}
+	<form method="get" action="/admin/picks" class="admin-sort">
+		<div class="admin-sort-row">
+			<label>Sort by
+				<select name="sort" data-autosubmit data-clear="dir">
+					<option value="date"{{if eq .Sort "date"}} selected{{end}}>Date</option>
+					<option value="title"{{if eq .Sort "title"}} selected{{end}}>Title</option>
+					<option value="community"{{if eq .Sort "community"}} selected{{end}}>Original community</option>
+					<option value="views"{{if eq .Sort "views"}} selected{{end}}>Views</option>
+				</select>
+			</label>
+			<select name="dir" aria-label="Direction" data-autosubmit>
+				<option value="asc"{{if eq .Dir "asc"}} selected{{end}}>{{if eq .Sort "date"}}Oldest first{{else if eq .Sort "views"}}Fewest first{{else}}A → Z{{end}}</option>
+				<option value="desc"{{if eq .Dir "desc"}} selected{{end}}>{{if eq .Sort "date"}}Newest first{{else if eq .Sort "views"}}Most first{{else}}Z → A{{end}}</option>
+			</select>
+		</div>
+		<div class="admin-filters">
+			{{if .IsAdmin}}
+			<label>Curator
+				<select name="curator" data-autosubmit>
+					<option value="">All</option>
+					{{range .CuratorOptions}}<option value="{{.Value}}"{{if eq .Value $.Curator}} selected{{end}}>{{.Label}} ({{.Count}})</option>{{end}}
+				</select>
+			</label>
+			{{end}}
+			<label>Category
+				<select name="category" data-autosubmit>
+					<option value="">All</option>
+					{{range .CategoryOpts}}<option value="{{.Value}}"{{if eq .Value $.CategoryFilter}} selected{{end}}>{{.Label}} ({{.Count}})</option>{{end}}
+				</select>
+			</label>
+			<label>Status
+				<select name="status" data-autosubmit>
+					<option value="">All</option>
+					<option value="published"{{if eq .StatusFilter "published"}} selected{{end}}>Published</option>
+					<option value="draft"{{if eq .StatusFilter "draft"}} selected{{end}}>Draft</option>
+				</select>
+			</label>
+			<label>Type
+				<select name="type" data-autosubmit>
+					<option value="">All</option>
+					<option value="fedi"{{if eq .TypeFilter "fedi"}} selected{{end}}>Fedi</option>
+					<option value="local"{{if eq .TypeFilter "local"}} selected{{end}}>Local</option>
+				</select>
+			</label>
+			<label>Pinned
+				<select name="pinned" data-autosubmit>
+					<option value="">All</option>
+					<option value="yes"{{if eq .PinnedFilter "yes"}} selected{{end}}>Pinned</option>
+					<option value="no"{{if eq .PinnedFilter "no"}} selected{{end}}>Not pinned</option>
+				</select>
+			</label>
+			<label>Original
+				<select name="unavailable" data-autosubmit>
+					<option value="">All</option>
+					<option value="no"{{if eq .UnavailFilter "no"}} selected{{end}}>Reachable</option>
+					<option value="yes"{{if eq .UnavailFilter "yes"}} selected{{end}}>Unavailable</option>
+				</select>
+			</label>
+		</div>
+		{{if .Filtered}}<a href="{{.ClearURL}}" class="admin-clear">Clear filters</a>{{end}}
+		<button type="submit" class="btn btn-secondary admin-apply" data-apply>Apply</button>
+	</form>
+	{{if not .Picks}}
+		<p class="admin-empty">{{if .Filtered}}No picks match these filters.{{else}}No picks yet.{{end}}</p>
+	{{else}}
+	<table class="admin-table">
+		<thead><tr>
+			<th><a href="{{index .SortLinks "title"}}">Title{{index .Arrows "title"}}</a></th>
+			<th class="col-wide">Category</th>
+			{{if .IsAdmin}}<th class="col-wide">Curator</th>{{end}}
+			<th class="col-wide"><a href="{{index .SortLinks "date"}}">Date{{index .Arrows "date"}}</a></th>
+			<th class="col-wide">Type</th>
+			<th class="col-wide"><a href="{{index .SortLinks "views"}}">Views{{index .Arrows "views"}}</a></th>
+			<th>Status</th>
+			<th><span class="visually-hidden">Actions</span></th>
+		</tr></thead>
+		<tbody>
+			{{$currentUser := .CurrentUser}}
+			{{range .Picks}}
+			<tr>
+				<td><a href="/p/{{.ID}}-{{.Slug}}" class="truncate admin-title-link">{{.Title}}</a>
+					<div class="admin-meta">{{.Category}}{{range .ExtraNames}}, {{.}}{{end}}{{if $.IsAdmin}} · {{.Curator}}{{end}} · {{.DisplayDate}} · {{if eq (print .SourceType) "fedi"}}Fedi{{else}}Local{{end}} · {{.Views}} view{{if ne .Views 1}}s{{end}}</div></td>
+				<td class="col-wide">{{.Category}}{{range .ExtraNames}}<span class="admin-extra-cat">, {{.}}</span>{{end}}</td>
+				{{if $.IsAdmin}}<td class="col-wide">{{.Curator}}</td>{{end}}
+				<td class="admin-date col-wide">{{.DisplayDate}}</td>
+				<td class="hide-mobile col-wide">{{if eq (print .SourceType) "fedi"}}Fedi{{else}}Local{{end}}</td>
+				<td class="admin-views col-wide" title="Views">{{.Views}}<span class="mobile-only"> views</span></td>
+				<td>{{if eq (print .Status) "published"}}Published{{else}}Draft{{end}}{{if .PublishAt.Valid}} <span class="admin-badge" title="Publishes automatically">Scheduled <time class="local-time" datetime="{{.PublishAt.String}}">{{.PublishAt.String}}</time></span>{{end}}{{if .PinnedAt.Valid}} <span class="admin-badge">Pinned</span>{{end}}{{if .SourceUnavailable}} <span class="admin-badge admin-badge-warn" title="The original post couldn't be fetched {{.ConsecutiveFailures}} times in a row">Original unavailable</span>{{end}}</td>
+				<td class="admin-row-actions">
+					<a href="/admin/picks/{{.ID}}/edit">Edit</a>
+					{{if $.IsAdmin}}
+					<form method="post" action="/admin/picks/{{.ID}}/pin">
+						<input type="hidden" name="pinned" value="{{if .PinnedAt.Valid}}0{{else}}1{{end}}">
+						<input type="hidden" name="back" value="{{$.Query}}">
+						<button type="submit" class="btn-link btn-link-plain">{{if .PinnedAt.Valid}}Unpin{{else}}Pin{{end}}</button>
+					</form>
+					{{end}}
+					{{if .CanEdit $currentUser}}
+					<form method="post" action="/admin/picks/{{.ID}}/delete" onsubmit="return confirm('Delete this pick? This can\'t be undone.');">
+						<input type="hidden" name="back" value="{{$.Query}}">
+						<button type="submit" class="btn-link">Delete</button>
+					</form>
+					{{end}}
+				</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+	{{end}}
+{{template "admin_foot" .}}
+{{end}}

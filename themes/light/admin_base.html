@@ -1,0 +1,97 @@
+{{define "admin_head"}}<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>{{.Title}} · Fedigest admin</title>
+	{{if siteIcon}}<link rel="icon" href="{{siteIcon}}">{{end}}
+	<link rel="stylesheet" href="/static/admin.css?v={{staticAssetVersion}}">
+</head>
+<body class="admin">
+	{{/* Pure-CSS mobile nav toggle: admin.css targets this checkbox's
+	:checked siblings; the label and .admin-nav-backdrop toggle it. */}}
+	<input type="checkbox" id="admin-nav-toggle" class="admin-nav-toggle-input" aria-label="Menu">
+	<div class="admin-shell">
+		<div class="admin-topbar">
+			<label for="admin-nav-toggle" class="admin-nav-toggle-btn" aria-hidden="true">☰</label>
+			<a class="admin-topbar-title" href="/">Fedigest admin</a>
+		</div>
+		<label for="admin-nav-toggle" class="admin-nav-backdrop" aria-hidden="true"></label>
+		<nav class="admin-nav" aria-label="Admin">
+			<a class="admin-nav-title" href="/">Fedigest</a>
+			<a href="/admin/picks">Picks</a>
+			{{/* Admin-only sections: a normal user would just get a 403. */}}
+			{{if .IsAdmin}}
+			<a href="/admin/categories">Categories</a>
+			<a href="/admin/users">Users</a>
+			<a href="/admin/sources">Sources</a>
+			<a href="/admin/sidebar">Sidebar</a>
+			<a href="/admin/themes">Themes</a>
+			<a href="/admin/settings">Site settings</a>
+			{{end}}
+			<a href="/account">Account</a>
+			<a href="/" target="_blank" rel="noopener" class="admin-nav-view-site">View site ↗</a>
+			<form method="post" action="/logout" class="admin-logout"><button type="submit">Log out</button></form>
+		</nav>
+		<main class="admin-content" id="main">
+{{end}}
+
+{{define "admin_foot"}}
+		</main>
+	</div>
+	<script>
+	// Times stored in UTC, shown in the reader's own time zone.
+	document.querySelectorAll('time.local-time').forEach(function (t) {
+		var d = new Date(t.getAttribute('datetime'));
+		if (!isNaN(d)) t.textContent = d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+	});
+	{{template "autosubmit_js"}}
+	</script>
+</body>
+</html>
+{{end}}
+
+{{/* Avatar upload/remove fields for a user (account page, admin user
+     form); handled by Server.applyAvatarForm. */}}
+{{define "avatar_fields"}}
+		<div class="admin-current-image">
+			<img class="avatar-preview" src="{{userAvatar .}}" alt="">
+			{{if and . .AvatarUploadPath.Valid}}
+			<label class="checkbox">
+				<input type="checkbox" name="remove_avatar">
+				Remove avatar
+				<span class="hint">Goes back to the default icon.</span>
+			</label>
+			{{end}}
+		</div>
+		<label>Upload a new avatar
+			<input type="file" name="avatar_upload" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
+			<span class="hint">Shown next to your name on bylines, at a small size — a square image works best. PNG, JPEG, GIF, WebP or ICO, up to 10 MB.</span>
+		</label>
+{{end}}
+
+{{/* autosubmit_js: a select with data-autosubmit applies its form as soon
+     as it's changed with a mouse or finger. From the keyboard the arrow
+     keys only move through the options; Enter, or the form's Apply button
+     ([data-apply], hidden until then), applies it. data-clear names a field
+     to reset first. */}}
+{{define "autosubmit_js"}}
+	document.querySelectorAll('select[data-autosubmit]').forEach(function (sel) {
+		var keyboard = false;
+		function apply() {
+			if (sel.dataset.clear && sel.form.elements[sel.dataset.clear]) sel.form.elements[sel.dataset.clear].value = '';
+			sel.form.submit();
+		}
+		sel.addEventListener('pointerdown', function () { keyboard = false; });
+		sel.addEventListener('keydown', function (e) {
+			keyboard = true;
+			if (e.key === 'Enter') { e.preventDefault(); apply(); }
+		});
+		sel.addEventListener('change', function () {
+			if (!keyboard) { apply(); return; }
+			var btn = sel.form.querySelector('[data-apply]');
+			if (btn) btn.hidden = false;
+		});
+	});
+	document.querySelectorAll('[data-apply]').forEach(function (b) { b.hidden = true; });
+{{end}}

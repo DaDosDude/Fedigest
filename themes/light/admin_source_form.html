@@ -1,0 +1,131 @@
+{{define "admin_source_form.html"}}
+{{if .IsNew}}
+{{template "admin_head" (adminHead "New source" true)}}
+	<h1>New source</h1>
+{{else}}
+{{template "admin_head" (adminHead "Edit source" true)}}
+	<h1>Edit source</h1>
+{{end}}
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	<form method="post" action="{{if .IsNew}}/admin/sources/new{{else}}/admin/sources/{{.Source.ID}}/edit{{end}}" class="admin-form">
+		<label>Name
+			<input type="text" name="name" maxlength="100" value="{{with .Source}}{{.Name.String}}{{end}}">
+			<span class="hint">Optional. Shown in the sources list; defaults to the community, account or instance.</span>
+		</label>
+		<label>Platform
+			<select name="platform" required>
+				<option value="">Choose one</option>
+				{{$pl := ""}}{{with .Source}}{{$pl = print .Platform}}{{end}}
+				<option value="lemmy" {{if eq $pl "lemmy"}}selected{{end}}>Lemmy</option>
+				<option value="piefed" {{if eq $pl "piefed"}}selected{{end}}>PieFed</option>
+				<option value="mbin" {{if eq $pl "mbin"}}selected{{end}}>Mbin</option>
+			</select>
+		</label>
+		<label>Instance URL
+			<input type="text" inputmode="url" autocapitalize="off" spellcheck="false" name="instance_url" placeholder="lemmy.world" value="{{with .Source}}{{.InstanceURL}}{{end}}" required>
+			<span class="hint">The instance this community/account lives on.</span>
+		</label>
+		<fieldset>
+			<legend>Watching a</legend>
+			{{$wt := "community"}}{{with .Source}}{{$wt = print .WatchType}}{{end}}
+			<label class="checkbox">
+				<input type="radio" name="watch_type" value="community" {{if eq $wt "community"}}checked{{end}}>
+				Community / magazine
+			</label>
+			<label class="checkbox">
+				<input type="radio" name="watch_type" value="person" {{if eq $wt "person"}}checked{{end}}>
+				Person's own account
+			</label>
+			<label class="checkbox">
+				<input type="radio" name="watch_type" value="instance" {{if eq $wt "instance"}}checked{{end}}>
+				Whole instance (Local feed)
+			</label>
+			<span class="hint">"Whole instance" picks up every new post in the communities hosted on the instance above. On a busy instance that can be a lot; auto-review lets you approve them first.</span>
+		</fieldset>
+		<label id="watch-target-field">Community or account to watch
+			<input type="text" name="watch_target" placeholder="technology@lemmy.world, or a username" value="{{with .Source}}{{.WatchTarget.String}}{{end}}">
+		</label>
+		<label id="exclude-field">Skip posts from these communities
+			<textarea name="exclude_communities" rows="4" autocapitalize="off" spellcheck="false" placeholder="memes&#10;politics@lemmy.world">{{with .Source}}{{.ExcludeCommunities.String}}{{end}}</textarea>
+			<span class="hint">One per line. A name on its own (memes) skips that community on every instance; name@instance only that one. Community links work too.</span>
+		</label>
+		<script>
+		(function () {
+			var field = document.getElementById('watch-target-field');
+			var exclude = document.getElementById('exclude-field');
+			var radios = document.querySelectorAll('input[name=watch_type]');
+			function sync() {
+				var inst = document.querySelector('input[name=watch_type]:checked');
+				field.style.display = inst && inst.value === 'instance' ? 'none' : '';
+				exclude.style.display = inst && inst.value === 'community' ? 'none' : '';
+			}
+			radios.forEach(function (r) { r.addEventListener('change', sync); });
+			sync();
+		})();
+		</script>
+		<label>Mode
+			{{$mode := ""}}{{with .Source}}{{$mode = print .Mode}}{{end}}
+			<select name="mode">
+				<option value="manual" {{if eq $mode "manual"}}selected{{end}}>Manual — saved for reference only, never polled</option>
+				<option value="auto-review" {{if eq $mode "auto-review"}}selected{{end}}>Auto-review — new posts saved as drafts for a curator to finish</option>
+				<option value="auto-publish" {{if eq $mode "auto-publish"}}selected{{end}}>Auto-publish — new posts published immediately as-is</option>
+			</select>
+		</label>
+		<label>Default category
+			<select name="default_category_id">
+				<option value="">None</option>
+				{{$src := .Source}}
+				{{range .Categories}}<option value="{{.ID}}" {{if and $src $src.DefaultCategoryID.Valid (eq $src.DefaultCategoryID.Int64 .ID)}}selected{{end}}>{{.Name}}</option>{{end}}
+			</select>
+			<span class="hint">Required before switching this source to auto-review or auto-publish — every pick needs a category.</span>
+		</label>
+		{{if multiCategory}}
+		<fieldset class="extra-categories">
+			<legend>Also add to</legend>
+			{{range .Categories}}<label class="checkbox"><input type="checkbox" name="extra_category" value="{{.ID}}"{{if inSet $.ExtraSet .ID}} checked{{end}}> {{.Name}}</label>{{end}}
+			<span class="hint">Extra categories for this source's picks. If another source already added a post, this source's categories are added to that pick.</span>
+		</fieldset>
+		<script>
+		(function () {
+			var main = document.querySelector('select[name=default_category_id]');
+			function sync() {
+				document.querySelectorAll('.extra-categories input[name=extra_category]').forEach(function (cb) {
+					cb.closest('label').style.display = cb.value === main.value ? 'none' : '';
+				});
+			}
+			if (main) { main.addEventListener('change', sync); sync(); }
+		})();
+		</script>
+		{{end}}
+		<div class="lookback">
+			<span class="lookback-label">{{if .IsNew}}Also add posts from the last{{else}}Look back again: add posts from the last{{end}}</span>
+			<input type="number" name="lookback_amount" min="0" max="999" placeholder="0" aria-label="Amount" value="{{.Lookback}}">
+			{{$unit := "hours"}}{{with .LookUnit}}{{$unit = .}}{{end}}
+			<select name="lookback_unit" aria-label="Unit">
+				<option value="minutes" {{if eq $unit "minutes"}}selected{{end}}>minutes</option>
+				<option value="hours" {{if eq $unit "hours"}}selected{{end}}>hours</option>
+				<option value="days" {{if eq $unit "days"}}selected{{end}}>days</option>
+			</select>
+			<span class="hint">{{if .IsNew}}Optional. By default only posts made after the source is created are added.{{else if .Source.IngestSince.Valid}}Currently adding posts since <time class="local-time" datetime="{{.Source.IngestSince.String}}">{{.Source.IngestSince.String}}</time>. Leave empty to keep that.{{else}}Currently adding posts made after the source was created. Leave empty to keep that.{{end}} Each poll only sees the newest 50 posts, so a long look-back on a busy community still only reaches back that far. Posts already picked are skipped.</span>
+		</div>
+
+		<label>Poll interval (seconds)
+			<input type="number" name="poll_interval_sec" value="{{with .Source}}{{.PollIntervalSec}}{{else}}900{{end}}" min="60" max="86400">
+			<span class="hint">Between 60 (one minute) and 86400 (one day). Backs off automatically (doubling, up to an hour) after repeated failures.</span>
+		</label>
+		<div class="admin-actions">
+			<button class="btn" type="submit">{{if .IsNew}}Create source{{else}}Save changes{{end}}</button>
+			<a class="btn btn-secondary" href="/admin/sources">Cancel</a>
+		</div>
+	</form>
+	{{if not .IsNew}}
+	<div class="admin-danger-zone">
+		<h2>Delete source</h2>
+		<p>Stops watching this community/account. Picks it already created stay, with their auto-post byline.</p>
+		<form method="post" action="/admin/sources/{{.Source.ID}}/delete" onsubmit="return confirm('Delete this source? Picks it already created stay.');">
+			<button type="submit" class="btn btn-danger">Delete source</button>
+		</form>
+	</div>
+	{{end}}
+{{template "admin_foot" .}}
+{{end}}

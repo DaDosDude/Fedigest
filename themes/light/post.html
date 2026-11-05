@@ -1,0 +1,66 @@
+{{define "post.html"}}
+{{template "head" .Head}}
+	{{template "site_header" .}}
+	<div class="layout">
+	<main id="main" class="site-main post">
+		<h1>{{.Title}}</h1>
+		{{template "pick_byline" .}}
+		{{if .CanEdit}}<a class="post-edit-link" href="/admin/picks/{{.ID}}/edit">Edit this pick</a>{{end}}
+		{{$img := .DisplayImage "/uploads"}}
+		{{if $img}}<img src="{{$img}}" alt="{{.EffectiveAltText}}" class="post-image" onerror="this.style.display='none'">{{end}}
+		{{with .LinkHost}}<a class="post-link-out" href="{{$.LinkURL.String}}" rel="noopener nofollow">
+			<span class="post-link-out-label">Linked article</span>
+			<span class="post-link-out-host">{{.}} ↗</span>
+		</a>{{end}}
+		{{$body := .EffectiveBody}}
+		{{with $body}}<article>{{markdown .}}</article>{{end}}
+		{{if .UseOriginalAsBody}}
+			{{$original := .EffectiveOriginalBody}}
+			{{if $original}}
+				{{if $body}}<hr>{{end}}
+				<article class="original-post-content">{{markdown $original}}</article>
+			{{end}}
+		{{end}}
+
+		{{if eq (print .SourceType) "fedi"}}
+		<div class="post-links">
+			<a href="{{.OriginalHomeURL}}">View original</a>
+			{{if .ResolverLink}}
+				<a href="{{.ResolverLink}}">Interact from your instance</a>
+			{{end}}
+		</div>
+
+		<section class="comments">
+			{{if and .Comments.Unavailable .CurrentUser (eq (print .CurrentUser.Role) "admin")}}
+				<p class="comments-note">Comments aren't loading from the source instance right now (admin-only note).</p>
+			{{else if .Comments.Stale}}
+				<p class="comments-note">Showing a saved copy: the original couldn't be reached just now. Last updated {{timeAgo .Comments.UpdatedAt}}.</p>
+			{{end}}
+
+			<h2>{{plural .Comments.Total "comment" "comments"}}</h2>
+			{{if not .Comments.Comments}}
+				<p class="admin-empty">No comments yet, or none could be loaded.</p>
+			{{else}}
+				<ul class="comment-list">
+					{{range .Comments.Comments}}{{template "comment_node" .}}{{end}}
+				</ul>
+			{{end}}
+		</section>
+		{{end}}
+	</main>
+	<aside class="sidebar">{{template "sidebar_blocks" .SidebarBlocks}}</aside>
+	</div>
+{{template "foot" .}}
+{{end}}
+
+{{define "comment_node"}}
+<li class="comment">
+	<div class="comment-meta">{{if .Author}}<strong>{{.Author}}</strong>{{end}}<span class="comment-score" title="Score">{{.Score}}</span>{{if .Community}}<span class="comment-crosspost-badge">via {{.Community}}</span>{{end}}</div>
+	<div class="comment-body">{{markdown .Body}}</div>
+	{{if .Children}}
+	<ul class="comment-list comment-children">
+		{{range .Children}}{{template "comment_node" .}}{{end}}
+	</ul>
+	{{end}}
+</li>
+{{end}}

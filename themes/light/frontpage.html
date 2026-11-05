@@ -1,0 +1,23 @@
+{{define "frontpage.html"}}
+{{template "head" .Head}}
+	{{template "site_header" .}}
+	<div class="layout">
+		<main id="main" class="site-main">
+			<h1>{{.PageTitle}}</h1>
+			{{if and (not .Picks) (not .Pinned)}}
+				<p class="empty">No picks published yet.</p>
+			{{end}}
+			<ul class="pick-list">
+				{{range .Pinned}}
+				{{template "pick_card" .}}
+				{{end}}
+				{{range .Picks}}
+				{{template "pick_card" .}}
+				{{end}}
+			</ul>
+			{{template "pagination" .}}
+		</main>
+		<aside class="sidebar">{{template "sidebar_blocks" .SidebarBlocks}}</aside>
+	</div>
+{{template "foot" .}}
+{{end}}

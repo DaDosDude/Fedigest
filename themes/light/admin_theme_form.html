@@ -1,0 +1,175 @@
+{{define "admin_theme_form.html"}}
+{{template "admin_head" (adminHead "Edit theme" true)}}
+	<div class="admin-toolbar">
+		<h1>Theme: {{.Theme.Name}}</h1>
+		<a class="btn btn-secondary" href="/admin/themes">All themes</a>
+	</div>
+	{{if .Saved}}<p class="admin-notice">Saved.</p>{{end}}
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	{{if .BuiltIn}}
+	<form method="post" action="/admin/themes/{{.Theme.Name}}/edit" class="admin-form">
+			<fieldset class="theme-pairing">
+				<legend>Light or dark</legend>
+				<label class="checkbox"><input type="radio" name="theme_mode" value="light"{{if eq .Mode.Mode "light"}} checked{{end}}> Light theme</label>
+				<label class="theme-partner" data-for="light">In dark mode, switch to
+					<select name="partner_dark">
+						<option value="">None (don't switch)</option>
+						{{range .DarkThemes}}<option value="{{.}}"{{if and (eq $.Mode.Mode "light") (eq . $.Mode.Partner)}} selected{{end}}>{{.}}</option>{{end}}
+					</select>
+				</label>
+				<label class="checkbox"><input type="radio" name="theme_mode" value="dark"{{if eq .Mode.Mode "dark"}} checked{{end}}> Dark theme</label>
+				<label class="theme-partner" data-for="dark">In light mode, switch to
+					<select name="partner_light">
+						<option value="">None (don't switch)</option>
+						{{range .LightThemes}}<option value="{{.}}"{{if and (eq $.Mode.Mode "dark") (eq . $.Mode.Partner)}} selected{{end}}>{{.}}</option>{{end}}
+					</select>
+				</label>
+				<label class="checkbox"><input type="radio" name="theme_mode" value="fixed"{{if eq .Mode.Mode "fixed"}} checked{{end}}> Fixed: always looks the same</label>
+				<span class="hint">With a partner, visitors see this theme or its partner depending on their device's light/dark setting, and the theme menu shows two themes paired with each other as one entry ("Sepia / Sepia dark"). Visitors can tick "Pure black (AMOLED)" to always get the dark version in pure black.</span>
+			</fieldset>
+		<p class="hint">Built-in themes can't be edited, but you can copy one under Themes and change the copy.</p>
+		<div class="admin-actions"><button class="btn" type="submit">Save</button></div>
+	</form>
+	{{else}}
+	<form method="post" action="/admin/themes/{{.Theme.Name}}/edit" class="admin-form theme-editor" id="theme-editor">
+		<div class="theme-editor-controls">
+			<label>Name
+				<input type="text" name="name" value="{{.Name}}" required pattern="[a-z0-9][a-z0-9\-]{0,39}">
+				<span class="hint">Lowercase letters, digits and dashes. Renaming keeps it as the site theme, in the visitors' menu and as a partner of other themes; visitors who picked it go back to the site theme.</span>
+			</label>
+			<fieldset class="theme-pairing">
+				<legend>Light or dark</legend>
+				<label class="checkbox"><input type="radio" name="theme_mode" value="light"{{if eq .Mode.Mode "light"}} checked{{end}}> Light theme</label>
+				<label class="theme-partner" data-for="light">In dark mode, switch to
+					<select name="partner_dark">
+						<option value="">None (don't switch)</option>
+						{{range .DarkThemes}}<option value="{{.}}"{{if and (eq $.Mode.Mode "light") (eq . $.Mode.Partner)}} selected{{end}}>{{.}}</option>{{end}}
+					</select>
+				</label>
+				<label class="checkbox"><input type="radio" name="theme_mode" value="dark"{{if eq .Mode.Mode "dark"}} checked{{end}}> Dark theme</label>
+				<label class="theme-partner" data-for="dark">In light mode, switch to
+					<select name="partner_light">
+						<option value="">None (don't switch)</option>
+						{{range .LightThemes}}<option value="{{.}}"{{if and (eq $.Mode.Mode "dark") (eq . $.Mode.Partner)}} selected{{end}}>{{.}}</option>{{end}}
+					</select>
+				</label>
+				<label class="checkbox"><input type="radio" name="theme_mode" value="fixed"{{if eq .Mode.Mode "fixed"}} checked{{end}}> Fixed: always looks the same</label>
+				<span class="hint">With a partner, visitors see this theme or its partner depending on their device's light/dark setting, and the theme menu shows two themes paired with each other as one entry ("Sepia / Sepia dark"). Visitors can tick "Pure black (AMOLED)" to always get the dark version in pure black.</span>
+			</fieldset>
+
+			<div class="theme-mode" role="group" aria-label="Editor" hidden>
+				<button type="button" class="theme-mode-btn is-active" data-mode="simple" aria-pressed="true">Simple</button>
+				<button type="button" class="theme-mode-btn" data-mode="css" aria-pressed="false">CSS</button>
+			</div>
+
+			<div class="theme-simple" hidden>
+				<fieldset>
+					<legend>Colours</legend>
+					<div class="theme-colors">
+						<label class="theme-color">Background<span><input type="color" data-var="--color-bg"><input type="text" data-var-text="--color-bg" aria-label="Background (CSS colour)"></span></label>
+						<label class="theme-color">Boxes<span><input type="color" data-var="--color-surface"><input type="text" data-var-text="--color-surface" aria-label="Boxes (CSS colour)"></span></label>
+						<label class="theme-color">Text<span><input type="color" data-var="--color-text"><input type="text" data-var-text="--color-text" aria-label="Text (CSS colour)"></span></label>
+						<label class="theme-color">Muted text<span><input type="color" data-var="--color-text-muted"><input type="text" data-var-text="--color-text-muted" aria-label="Muted text (CSS colour)"></span></label>
+						<label class="theme-color">Links and buttons<span><input type="color" data-var="--color-accent"><input type="text" data-var-text="--color-accent" aria-label="Links and buttons (CSS colour)"></span></label>
+						<label class="theme-color" title="Used for focus outlines by themes copied from High contrast">Focus outline<span><input type="color" data-var="--color-accent-light"><input type="text" data-var-text="--color-accent-light" aria-label="Focus outline (CSS colour)"></span></label>
+						<label class="theme-color">Lines<span><input type="color" data-var="--color-border"><input type="text" data-var-text="--color-border" aria-label="Lines (CSS colour)"></span></label>
+						<label class="theme-color">Errors<span><input type="color" data-var="--color-error"><input type="text" data-var-text="--color-error" aria-label="Errors (CSS colour)"></span></label>
+					</div>
+				</fieldset>
+
+				<fieldset>
+					<legend>Text</legend>
+					<label>Font
+						<select data-opt="font">
+							<option value="">As in the stylesheet</option>
+							<option value="sans">Sans-serif (system)</option>
+							<option value="serif">Serif</option>
+							<option value="mono">Monospace</option>
+							<option value="vga">Terminal (IBM VGA)</option>
+						</select>
+					</label>
+					<label>Text size
+						<select data-opt="size">
+							<option value="">As in the stylesheet</option>
+							<option value="14">Small (14px)</option>
+							<option value="15">15px</option>
+							<option value="16">Normal (16px)</option>
+							<option value="17">17px</option>
+							<option value="18">Large (18px)</option>
+							<option value="20">Larger (20px)</option>
+						</select>
+					</label>
+				</fieldset>
+
+				<fieldset>
+					<legend>Layout</legend>
+					<label>Corners <output data-out="--radius"></output>
+						<input type="range" min="0" max="24" step="1" data-var-px="--radius" aria-label="Corners">
+					</label>
+					<label>Page width <output data-out="--content-width"></output>
+						<input type="range" min="560" max="1200" step="20" data-var-px="--content-width" aria-label="Page width">
+					</label>
+					<label>Lines between posts and around boxes
+						<select data-opt="lines">
+							<option value="">As in the stylesheet</option>
+							<option value="thin">Thin</option>
+							<option value="thick">Thick</option>
+							<option value="double">Double</option>
+							<option value="dashed">Dashed</option>
+							<option value="dotted">Dotted</option>
+							<option value="none">None</option>
+						</select>
+					</label>
+					<label>Buttons
+						<select data-opt="buttons">
+							<option value="">As in the stylesheet</option>
+							<option value="filled">Filled</option>
+							<option value="outline">Outline</option>
+							<option value="inverse">Text colour (inverse)</option>
+						</select>
+					</label>
+					<label class="theme-color" data-show-for="filled">Button text<span><input type="color" data-opt-color="buttonText"><input type="text" data-opt-text="buttonText" aria-label="Button text (CSS colour)"></span></label>
+				</fieldset>
+			</div>
+
+			<label class="theme-css">Stylesheet
+				<textarea name="css" class="css-editor" spellcheck="false">{{.Theme.CSS}}</textarea>
+				<span class="hint">Plain CSS. The colours, font and widths are the variables in the :root block at the top. Changes in Simple mode are written into this stylesheet.</span>
+			</label>
+
+			<div class="admin-actions"><button class="btn" type="submit">Save</button></div>
+		</div>
+
+		<div class="theme-preview" hidden>
+			<div class="theme-preview-bar">
+				<select id="theme-preview-page" aria-label="Preview page">
+					<option value="/">Frontpage</option>
+					{{if .PreviewPost}}<option value="{{.PreviewPost}}">Newest post</option>{{end}}
+					<option value="/categories">Categories</option>
+					<option value="/search?q=a">Search</option>
+					<option value="/privacy">Privacy</option>
+				</select>
+				<span class="theme-preview-size" role="group" aria-label="Preview size">
+					<button type="button" class="theme-mode-btn is-active" data-size="phone" aria-pressed="true">Phone</button>
+					<button type="button" class="theme-mode-btn" data-size="desktop" aria-pressed="false">Desktop</button>
+				</span>
+			</div>
+			<div class="theme-preview-frame"><iframe id="theme-preview-iframe" src="/" title="Preview"></iframe></div>
+			<p class="hint">Preview of unsaved changes. Links inside it work; it's your site with this theme.</p>
+		</div>
+	</form>
+	<script src="/static/theme-editor.js?v={{staticAssetVersion}}"></script>
+	{{end}}
+	<script>
+		// Show only the partner menu of the chosen kind.
+		document.querySelectorAll('.theme-pairing').forEach(function (fs) {
+			function show() {
+				var mode = (fs.querySelector('input[name=theme_mode]:checked') || {}).value;
+				fs.querySelectorAll('.theme-partner').forEach(function (l) { l.hidden = l.dataset.for !== mode; });
+			}
+			fs.addEventListener('change', show);
+			show();
+		});
+	</script>
+{{template "admin_foot" .}}
+{{end}}

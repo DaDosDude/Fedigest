@@ -1,0 +1,15 @@
+{{define "login.html"}}
+{{template "head" .Head}}
+	<main id="main" class="site-main login">
+		<h1>Log in</h1>
+		{{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
+		<form method="post" action="/login">
+			<label>Username <input type="text" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required autofocus></label>
+			<label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+			<label class="checkbox"><input type="checkbox" name="remember_me"> Remember me</label>
+			<button type="submit">Log in</button>
+		</form>
+		{{if .EmailEnabled}}<p><a href="/forgot-password">Forgot password?</a></p>{{end}}
+	</main>
+{{template "foot" .}}
+{{end}}

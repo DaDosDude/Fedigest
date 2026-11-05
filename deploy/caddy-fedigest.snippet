@@ -1,0 +1,13 @@
+# Append to your Caddyfile with your own domain and reload Caddy. Assumes
+# Caddy runs on the host and proxies to the container's published
+# localhost port (see docker-compose.yml).
+
+fedigest.example.com {
+	encode zstd gzip
+
+	reverse_proxy 127.0.0.1:8080 {
+		health_uri /
+		health_interval 15s
+		health_timeout 5s
+	}
+}

@@ -1,0 +1,14 @@
+{{define "not_found.html"}}
+{{template "head" .Head}}
+	<header class="site-header">
+		<a class="site-logo" href="/">{{if siteIcon}}<img src="{{siteIcon}}" alt="" class="site-logo-icon" width="28" height="28">{{end}}{{.SiteName}}</a>
+	</header>
+	<div class="layout">
+		<main id="main" class="site-main not-found">
+			<h1>Page not found</h1>
+			<p>That page doesn't exist, or may have been moved.</p>
+			<p><a href="/">Back to the frontpage</a></p>
+		</main>
+	</div>
+{{template "foot" .}}
+{{end}}

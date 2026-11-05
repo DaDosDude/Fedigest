@@ -1,0 +1,41 @@
+{{define "admin_sources.html"}}
+{{template "admin_head" (adminHead "Sources" true)}}
+	<div class="admin-toolbar">
+		<h1>Sources</h1>
+		<a class="btn" href="/admin/sources/new">New source</a>
+	</div>
+	<p class="hint">Auto-ingest watches a community, a person or a whole instance on an interval. A source in "manual" mode is just a saved reference — nothing is polled unless it's switched to auto-review or auto-publish.</p>
+	{{if not .Sources}}
+		<p class="admin-empty">No sources yet. Pasting a post URL for a manual pick doesn't need one — sources are only for watching a community/account automatically.</p>
+	{{else}}
+	<table class="admin-table">
+		<thead><tr><th>Watching</th><th class="col-wide">Platform</th><th class="col-wide">Instance</th><th class="col-wide">Mode</th><th class="col-wide">Interval</th><th>Status</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+		<tbody>
+			{{range .Sources}}
+			{{$platform := "Lemmy"}}{{if eq (print .Platform) "piefed"}}{{$platform = "PieFed"}}{{else if eq (print .Platform) "mbin"}}{{$platform = "Mbin"}}{{end}}
+			<tr>
+				<td>{{.Label}} <span class="hint">({{if eq (print .WatchType) "instance"}}whole instance{{else if eq (print .WatchType) "person"}}person{{else}}community{{end}}{{if .Name.Valid}}{{if eq (print .WatchType) "instance"}}: {{.Host}}{{else}}: {{.WatchTarget.String}}{{end}}{{end}}{{with .ExcludeCount}}, {{.}} excluded{{end}})</span>
+					<div class="admin-meta">{{$platform}} · {{.Host}} · {{.Mode}} · every {{.PollIntervalSec}}s</div></td>
+				<td class="col-wide">{{$platform}}</td>
+				<td class="col-wide">{{.Host}}</td>
+				<td class="col-wide">{{.Mode}}</td>
+				<td class="col-wide">{{.PollIntervalSec}}s</td>
+				<td>
+					{{if .SourceUnavailable}}<span class="admin-error">unavailable ({{.ConsecutiveFailures}} failures)</span>
+					{{else if .LastPolledAt.Valid}}last polled <time class="local-time" datetime="{{isoTime .LastPolledAt.String}}">{{.LastPolledAt.String}} UTC</time>
+					{{else if eq (print .Mode) "manual"}}not polled (manual)
+					{{else}}not yet polled{{end}}
+				</td>
+				<td class="admin-row-actions">
+					<a href="/admin/sources/{{.ID}}/edit">Edit</a>
+					<form method="post" action="/admin/sources/{{.ID}}/delete" onsubmit="return confirm('Delete this source? Picks it already created stay.');">
+						<button type="submit" class="btn-link">Delete</button>
+					</form>
+				</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+	{{end}}
+{{template "admin_foot" .}}
+{{end}}

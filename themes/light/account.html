@@ -1,0 +1,21 @@
+{{define "account.html"}}
+{{template "admin_head" (adminHead "Account" .IsAdmin)}}
+	<h1>Your account</h1>
+	{{if .Error}}<p class="admin-error" role="alert">{{.Error}}</p>{{end}}
+	{{if .Success}}<p class="admin-notice" role="status">{{.Success}}</p>{{end}}
+
+	<h2>Avatar</h2>
+	<form method="post" action="/account/avatar" enctype="multipart/form-data" class="admin-form">
+		{{template "avatar_fields" .Me}}
+		<button type="submit" class="btn">Save avatar</button>
+	</form>
+
+	<h2>Password</h2>
+	<form method="post" action="/account/password" class="admin-form">
+		<label>Current password <input type="password" name="current_password" autocomplete="current-password" required></label>
+		<label>New password <input type="password" name="new_password" autocomplete="new-password" required></label>
+		<label>Confirm new password <input type="password" name="confirm_password" autocomplete="new-password" required></label>
+		<button type="submit" class="btn">Change password</button>
+	</form>
+{{template "admin_foot" .}}
+{{end}}

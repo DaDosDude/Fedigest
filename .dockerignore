@@ -1,0 +1,13 @@
+# Keep the build context to source only: local data/uploads, release
+# tarballs and VCS metadata never belong in the image or build cache.
+data/
+uploads/
+*.tar.gz
+.git/
+.env
+CLAUDE.md
+deploy/
+backups/
+.previous.tar.gz
+.previous-commit
+.github/

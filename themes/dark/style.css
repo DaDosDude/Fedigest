@@ -1,0 +1,553 @@
+/* Dark theme: a GitHub/VS Code-style palette with a green accent. */
+:root {
+	--color-bg: #0d1117;
+	--color-surface: #161b22;
+	--color-text: #e6edf3;
+	--color-text-muted: #8b949e;
+	/* Between GitHub's text and button greens: the link color and the
+	   button background, with dark button text (white on it is too faint). */
+	--color-accent: #2ea043;
+	--color-on-accent: #0d1117;
+	--color-accent-light: #56d364;
+	--color-border: #30363d;
+	--color-error: #f85149;
+	--radius: 8px;
+	--font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+	--content-width: 760px;
+}
+
+* { box-sizing: border-box; }
+
+/* Default link color for links without a more specific rule. */
+a { color: var(--color-accent); }
+
+body {
+	margin: 0;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-sans);
+	line-height: 1.6;
+}
+
+.site-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.site-logo {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-width: 0;
+	font-weight: 700;
+	font-size: 1.25rem;
+	color: var(--color-accent);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.site-logo-icon {
+	width: 1.75rem;
+	height: 1.75rem;
+	max-width: 1.75rem;
+	max-height: 1.75rem;
+	flex-shrink: 0;
+	border-radius: 6px;
+	object-fit: cover;
+}
+
+.site-nav a {
+	margin-left: 1rem;
+	color: var(--color-text);
+	text-decoration: none;
+}
+
+.layout {
+	display: flex;
+	gap: 2rem;
+	max-width: 1000px;
+	margin: 0 auto;
+	padding: 1.5rem;
+}
+
+.site-main { flex: 1; min-width: 0; }
+.sidebar { width: 260px; flex-shrink: 0; }
+
+.sidebar-block {
+	margin-bottom: 1.5rem;
+	padding-bottom: 1.5rem;
+	border-bottom: 1px solid var(--color-border);
+	font-size: 0.9rem;
+	overflow-wrap: anywhere;
+}
+.sidebar-block:last-child { border-bottom: none; }
+.sidebar-block h2 { font-size: 1rem; margin: 0 0 0.5rem; }
+.sidebar-block p:first-child { margin-top: 0; }
+.sidebar-block a { color: var(--color-accent); }
+
+.search-form { display: flex; gap: 0.5rem; }
+.search-form input[type="search"] {
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--color-text-muted);
+	border-radius: var(--radius);
+	font: inherit;
+	background: var(--color-bg);
+	color: var(--color-text);
+}
+.search-form-nav { display: inline-flex; margin-left: 1rem; }
+.search-form-nav input { width: 10rem; }
+.search-form button { display: none; } /* nav box submits on Enter; the search page shows the button */
+.site-main > .search-form button { display: inline-block; }
+.site-main > .search-form input[type="search"] { flex: 1; min-width: 0; }
+
+/* Mobile-only stand-in for .search-form-nav. */
+.search-icon-link {
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	margin-left: 1rem;
+	color: var(--color-text);
+}
+
+.pick-list { list-style: none; padding: 0; margin: 0; }
+
+.pagination {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1.5rem;
+	padding-top: 1rem;
+}
+.pagination a { color: var(--color-accent); text-decoration: none; font-weight: 600; }
+.pagination a:hover { text-decoration: underline; }
+.pagination a[rel="next"] { margin-left: auto; }
+
+.pick-card {
+	border-bottom: 1px solid var(--color-border);
+	padding: 1.25rem 0;
+}
+
+.pick-card a { color: inherit; text-decoration: none; }
+/* Long unbroken strings in an excerpt (a pasted URL) wrap instead of
+   widening the card past a phone screen. */
+.pick-card { overflow-wrap: anywhere; }
+.pick-card-body { display: block; }
+.pick-card h2 { margin: 0 0 0.35rem; font-size: 1.1rem; }
+.pick-card p { margin: 0; color: var(--color-text-muted); }
+/* Card excerpt: rendered markdown, kept compact. */
+.pick-card-excerpt { color: var(--color-text-muted); }
+.pick-card-excerpt > :first-child { margin-top: 0; }
+.pick-card-excerpt > :last-child { margin-bottom: 0; }
+.pick-card-excerpt p { margin: 0 0 0.6rem; }
+.pick-card-excerpt h1, .pick-card-excerpt h2, .pick-card-excerpt h3,
+.pick-card-excerpt h4, .pick-card-excerpt h5, .pick-card-excerpt h6 { font-size: 1em; margin: 0 0 0.4rem; }
+.pick-card-excerpt img { display: block; max-width: 100%; height: auto; margin: 0.5rem 0; border-radius: var(--radius); }
+.pick-card-excerpt pre { overflow-x: auto; }
+.pick-card-excerpt blockquote { margin: 0.5rem 0; padding-left: 0.8rem; border-left: 3px solid var(--color-border); }
+.pick-card-excerpt ul, .pick-card-excerpt ol { margin: 0 0 0.6rem; padding-left: 1.4rem; }
+.pick-card-excerpt .card-link { color: var(--color-accent); }
+.pick-card .pick-card-link-out {
+	display: inline-block;
+	margin-top: 0.4rem;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--color-accent);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+.pick-card .pick-card-link-out:hover { text-decoration: underline; }
+.pick-comment-count { display: inline-block; margin-top: 0.4rem; font-size: 0.82rem; color: var(--color-text-muted); }
+
+/* Byline avatar is capped smaller than the 28px site icon. */
+.pick-byline {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin: 0.3rem 0 0.5rem;
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+}
+.byline-avatar {
+	width: 20px;
+	height: 20px;
+	max-width: 20px;
+	max-height: 20px;
+	border-radius: 50%;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+.byline-curator { font-weight: 600; color: var(--color-text); }
+.byline-date { font-weight: 400; font-style: normal; color: var(--color-text-muted); white-space: nowrap; }
+/* The original poster gets its own line under the curator. */
+.byline-original { flex-basis: 100%; }
+.post .pick-byline { font-size: 0.95rem; margin-bottom: 1rem; }
+.post .byline-avatar { width: 24px; height: 24px; max-width: 24px; max-height: 24px; }
+
+.pick-card-image-wrap {
+	position: relative;
+	margin-bottom: 0.75rem;
+	/* Query container so .pick-card-image's max-height can use cqw. */
+	container-type: inline-size;
+}
+.pick-card-image-wrap a { display: block; }
+.pick-card-image {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	height: auto;
+	/* Cap height relative to the image's own width (cqw) at roughly a phone
+	   screen's ratio (~9:19.5), so only very tall images are cropped, from
+	   the bottom (object-position: top). */
+	max-height: 216.67cqw;
+	object-fit: cover;
+	object-position: top;
+	border-radius: var(--radius);
+}
+/* Shown only once JS has confirmed the image was actually cropped. */
+.pick-card-image-gradient {
+	display: none;
+	position: absolute;
+	left: 0; right: 0; bottom: 0;
+	height: 4.5rem;
+	border-radius: 0 0 var(--radius) var(--radius);
+	background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.6));
+	pointer-events: none;
+}
+.pick-card-image-wrap .pick-card-image-expand {
+	display: none;
+	position: absolute;
+	right: 0.6rem;
+	bottom: 0.6rem;
+	padding: 0.3rem 0.7rem;
+	font: inherit;
+	font-size: 0.78rem;
+	color: #fff;
+	background: rgba(0, 0, 0, 0.6);
+	border: none;
+	border-radius: 999px;
+	text-decoration: none;
+	cursor: pointer;
+}
+.pick-card-image-wrap.is-cropped .pick-card-image-gradient,
+.pick-card-image-wrap.is-cropped .pick-card-image-expand {
+	display: block;
+}
+
+.post-image {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	max-height: 480px;
+	object-fit: cover;
+	border-radius: var(--radius);
+	margin: 1rem 0;
+}
+
+/* Link posts: the linked article, as one tappable block. */
+.post-link-out {
+	display: flex;
+	flex-direction: column;
+	gap: 0.1rem;
+	margin: 1rem 0;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	text-decoration: none;
+}
+.post-link-out-label { font-size: 0.8rem; color: var(--color-text-muted); }
+.post-link-out-host { color: var(--color-accent); font-weight: 600; overflow-wrap: anywhere; }
+.post-link-out:hover .post-link-out-host { text-decoration: underline; }
+
+/* Lemmy/PieFed spoiler blocks, rendered as <details class="spoiler">. */
+details.spoiler {
+	margin: 0.75rem 0;
+	padding: 0.4rem 0.9rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+}
+details.spoiler > summary { cursor: pointer; font-weight: 600; color: var(--color-text-muted); }
+details.spoiler[open] > summary { margin-bottom: 0.4rem; }
+details.spoiler > :last-child { margin-bottom: 0.3rem; }
+/* Spoiler lookalike on list cards, which are already links. */
+.spoiler-card {
+	display: block;
+	margin: 0.5rem 0;
+	padding: 0.4rem 0.9rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	cursor: pointer;
+}
+.spoiler-card-summary { font-weight: 600; color: var(--color-text-muted); }
+.spoiler-card-summary::before { content: "\25B6"; font-size: 0.7em; margin-right: 0.5em; vertical-align: 0.1em; }
+
+.login, .post {
+	max-width: var(--content-width);
+	margin: 2rem auto;
+	padding: 0 1.5rem;
+	/* Keep this box within the viewport so .post-image's width:100% holds;
+	   overflow-x guards against any content forcing a horizontal scroll. */
+	overflow-x: hidden;
+	/* In the mobile column flexbox, auto margins would shrink-to-fit
+	   content and let a long unbreakable string widen the page. */
+	width: 100%;
+	overflow-wrap: anywhere;
+}
+.resolve-form { max-width: 24rem; margin-top: 1.5rem; }
+.resolve-status { font-weight: 600; }
+.resolve-status a { font-weight: 400; margin-left: 0.5rem; }
+.resolve-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+.resolve-actions button { font-weight: 400; font-size: 0.9rem; padding: 0.35rem 0.9rem; }
+.resolve-actions .resolve-change { background: transparent; color: var(--color-text); border: 1px solid var(--color-border); }
+
+form label { display: block; margin-bottom: 0.75rem; }
+/* Every text-ish input on public forms, with explicit colors so dark
+   themes don't get white boxes. */
+form input[type="text"],
+form input[type="password"],
+form input[type="email"],
+form input[type="url"] {
+	display: block;
+	width: 100%;
+	padding: 0.5rem;
+	border: 1px solid var(--color-text-muted);
+	border-radius: var(--radius);
+	margin-top: 0.25rem;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font: inherit;
+}
+form .checkbox input { width: auto; margin-right: 0.4rem; }
+
+button {
+	background: var(--color-accent);
+	color: var(--color-on-accent, #ffffff);
+	border: none;
+	border-radius: var(--radius);
+	padding: 0.6rem 1.2rem;
+	cursor: pointer;
+}
+
+.error { color: var(--color-error); }
+
+.post-links { display: flex; gap: 1rem; margin: 1.5rem 0; }
+.comments-note { color: var(--color-text-muted); font-size: 0.9rem; background: var(--color-surface); padding: 0.6rem 0.9rem; border-radius: var(--radius); }
+.comment-list { list-style: none; padding-left: 0; margin: 0; }
+/* Separate sibling top-level comments. */
+.comment-list:not(.comment-children) > .comment {
+	padding: 0.9rem 0;
+	border-bottom: 1px solid var(--color-border);
+}
+.comment-list:not(.comment-children) > .comment:first-child { padding-top: 0; }
+.comment-list:not(.comment-children) > .comment:last-child { border-bottom: none; padding-bottom: 0; }
+
+.comment-children {
+	padding-left: 0.9rem;
+	border-left: 2px solid var(--color-border);
+	margin-top: 0.75rem;
+	margin-bottom: 0.75rem;
+}
+.comment-children > .comment { margin-bottom: 0.9rem; }
+.comment-children > .comment:last-child { margin-bottom: 0; }
+
+.comment { margin-bottom: 0; }
+.comment-meta {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+	margin-bottom: 0.3rem;
+}
+.comment-meta strong { color: var(--color-text); }
+.comment-score {
+	background: var(--color-surface);
+	border-radius: 999px;
+	padding: 0.05rem 0.5rem;
+	font-size: 0.78rem;
+}
+.comment-crosspost-badge {
+	font-size: 0.78rem;
+	color: var(--color-text-muted);
+	background: var(--color-surface);
+	padding: 0.1rem 0.4rem;
+	border-radius: 999px;
+}
+/* Rendered markdown in pick bodies and comments. */
+.post article, .comment-body {
+	line-height: 1.6;
+}
+.post article > *:first-child, .comment-body > *:first-child { margin-top: 0; }
+.post article > *:last-child, .comment-body > *:last-child { margin-bottom: 0; }
+.post article blockquote, .comment-body blockquote {
+	margin: 0.75rem 0;
+	padding: 0.1rem 1rem;
+	border-left: 3px solid var(--color-border);
+	color: var(--color-text-muted);
+}
+.post article code, .comment-body code {
+	background: var(--color-surface);
+	border-radius: 4px;
+	padding: 0.1rem 0.3rem;
+	font-size: 0.9em;
+}
+.post article pre, .comment-body pre {
+	background: var(--color-surface);
+	border-radius: var(--radius);
+	padding: 0.75rem 1rem;
+	overflow-x: auto;
+}
+.post article pre code, .comment-body pre code { background: none; padding: 0; }
+.post article a, .comment-body a { color: var(--color-accent); }
+.post article ul, .post article ol, .comment-body ul, .comment-body ol { padding-left: 1.5rem; }
+/* Inline markdown images have no size class; keep them from overflowing. */
+.post article img, .comment-body img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+/* Full-image lightbox; .open shows it. */
+.lightbox {
+	display: none;
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	background: rgba(0, 0, 0, 0.85);
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+	border-radius: var(--radius);
+}
+.lightbox-close {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	width: 2.25rem;
+	height: 2.25rem;
+	border: none;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.15);
+	color: #fff;
+	font-size: 1.4rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.site-footer {
+	text-align: center;
+	padding: 2rem;
+	color: var(--color-text-muted);
+	font-size: 0.85rem;
+}
+
+/* Mobile overrides; kept last so they win at equal specificity. */
+@media (max-width: 720px) {
+	.layout { flex-direction: column; }
+	.sidebar { width: 100%; order: 2; }
+	.site-main { order: 1; }
+	/* .layout already pads the edges; avoid doubling the gutter. */
+	.layout { padding: 1rem; }
+	.post { padding: 0; margin-top: 1rem; }
+	/* Login pages have no .layout around them to pad the edges. */
+	.login { padding: 0 1rem; margin-top: 1rem; }
+	/* Tighter reply indent on narrow screens. */
+	.comment-children { padding-left: 0.5rem; }
+
+	/* Stack the logo above the nav on narrow screens. */
+	.site-header { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+	.site-nav {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		width: 100%;
+	}
+	.site-nav a { margin-left: 0; }
+	/* The inline search box doesn't fit; .search-icon-link replaces it. */
+	.search-form-nav { display: none; }
+	.search-icon-link { display: inline-flex; margin-left: 0; }
+}
+
+/* ---- Category nav ----
+   One row on desktop (two when space is narrow), two on phones; the
+   header script hides what doesn't fit and shows "More…". Placed after
+   the mobile block so these rules win over the older .site-nav ones. */
+.site-nav {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0 1rem;
+	flex: 1;
+	min-width: 0;
+	margin-left: 1.5rem;
+}
+.site-nav a { margin-left: 0; }
+.nav-cats {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.25rem 1rem;
+	flex: 0 1 auto;
+	min-width: 0;
+}
+.nav-cats a { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.nav-more { display: none; }
+.nav-tools { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; }
+.nav-tools .search-form-nav { margin-left: 0; }
+.nav-tools .search-icon-link { margin-left: 0; }
+
+.category-index { list-style: none; padding: 0; margin: 0; }
+.category-index li { padding: 0.6rem 0; border-bottom: 1px solid var(--color-border); }
+.category-index a { text-decoration: none; font-size: 1.1rem; overflow-wrap: anywhere; }
+
+@media (max-width: 720px) {
+	/* Logo on top; categories, search icon and Admin/Log in wrap together
+	   below. display: contents lifts the nav boxes' links into the nav. */
+	.site-nav {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		width: 100%;
+		margin-left: 0;
+	}
+	.nav-cats, .nav-tools { display: contents; }
+}
+
+/* Pinned picks (frontpage and category pages). */
+.pinned-label {
+	display: inline-block;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--color-accent);
+	margin-bottom: 0.15rem;
+}
+
+/* Footer theme menu. */
+.theme-picker { display: inline-flex; align-items: center; gap: 0.4rem; margin-left: 1rem; }
+.theme-picker label { display: inline-flex; align-items: center; gap: 0.4rem; }
+.theme-picker select {
+	font: inherit;
+	color: var(--color-text);
+	background: var(--color-bg);
+	border: 1px solid var(--color-text-muted);
+	border-radius: var(--radius);
+	padding: 0.15rem 0.3rem;
+}

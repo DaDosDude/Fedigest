@@ -1,0 +1,95 @@
+{{define "admin_categories.html"}}
+{{template "admin_head" (adminHead "Categories" true)}}
+	<div class="admin-toolbar">
+		<h1>Categories</h1>
+		<a class="btn" href="/admin/categories/new">New category</a>
+	</div>
+	{{if .Error}}<p class="admin-error">{{.Error}}</p>{{end}}
+	<p class="hint">Drag <span aria-hidden="true">&#10303;</span> to change the order categories appear in on the site. <span id="reorder-status" class="reorder-status" role="status"></span></p>
+	{{if not .Categories}}
+		<p class="admin-empty">No categories yet — every pick needs one, so create the first before publishing.</p>
+	{{else}}
+	<table class="admin-table">
+		<thead><tr><th><span class="visually-hidden">Order</span></th><th>Name</th><th>Slug</th><th>Frontpage</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+		<tbody id="category-rows">
+			{{range .Categories}}
+			<tr data-id="{{.ID}}">
+				<td class="drag-cell"><button type="button" class="drag-handle" aria-label="Move {{.Name}} (drag, or use the arrow keys)" title="Drag to reorder">&#10303;</button></td>
+				<td>{{.Name}}</td>
+				<td>{{.Slug}}</td>
+				<td>{{if .ShowOnFrontpage}}Shown{{else}}<span class="admin-empty">Hidden</span>{{end}}</td>
+				<td class="admin-row-actions">
+					<a href="/admin/categories/{{.ID}}/edit">Edit</a>
+					<form method="post" action="/admin/categories/{{.ID}}/delete" onsubmit="return confirm('Delete this category?');">
+						<button type="submit" class="btn-link">Delete</button>
+					</form>
+				</td>
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
+	<script>
+	(function () {
+		var body = document.getElementById('category-rows');
+		var status = document.getElementById('reorder-status');
+		if (!body) return;
+		function order() {
+			return [].map.call(body.querySelectorAll('tr[data-id]'), function (tr) { return tr.dataset.id; }).join(',');
+		}
+		function save() {
+			status.textContent = 'Saving…';
+			fetch('/admin/categories/reorder', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({ ids: order() })
+			}).then(function (r) {
+				status.textContent = r.ok ? 'Order saved.' : 'Could not save the order — reload and try again.';
+			}).catch(function () { status.textContent = 'Could not save the order — reload and try again.'; });
+		}
+		var row = null, before = '';
+		body.addEventListener('pointerdown', function (e) {
+			var h = e.target.closest('.drag-handle');
+			if (!h) return;
+			e.preventDefault();
+			row = h.closest('tr');
+			before = order();
+			row.classList.add('dragging');
+			h.setPointerCapture(e.pointerId);
+		});
+		body.addEventListener('pointermove', function (e) {
+			if (!row) return;
+			var y = e.clientY;
+			if (y < 60) window.scrollBy(0, -12);
+			else if (y > window.innerHeight - 60) window.scrollBy(0, 12);
+			var rows = [].filter.call(body.querySelectorAll('tr[data-id]'), function (tr) { return tr !== row; });
+			var next = null;
+			for (var i = 0; i < rows.length; i++) {
+				var r = rows[i].getBoundingClientRect();
+				if (y < r.top + r.height / 2) { next = rows[i]; break; }
+			}
+			if (next !== row.nextElementSibling) body.insertBefore(row, next);
+		});
+		function end() {
+			if (!row) return;
+			row.classList.remove('dragging');
+			row = null;
+			if (order() !== before) save();
+		}
+		body.addEventListener('pointerup', end);
+		body.addEventListener('pointercancel', end);
+		body.addEventListener('keydown', function (e) {
+			var h = e.target.closest('.drag-handle');
+			if (!h || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+			e.preventDefault();
+			var tr = h.closest('tr');
+			if (e.key === 'ArrowUp' && tr.previousElementSibling) body.insertBefore(tr, tr.previousElementSibling);
+			else if (e.key === 'ArrowDown' && tr.nextElementSibling) body.insertBefore(tr.nextElementSibling, tr);
+			else return;
+			h.focus();
+			save();
+		});
+	})();
+	</script>
+	{{end}}
+{{template "admin_foot" .}}
+{{end}}

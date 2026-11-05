@@ -1,0 +1,448 @@
+/* Admin UI styling: always dark, independent of the public theme. */
+
+:root {
+	--admin-bg: #0d1117;
+	--admin-surface: #161b22;
+	--admin-input-bg: #0d1117;
+	--admin-text: #e6edf3;
+	--admin-text-muted: #8b949e;
+	--admin-accent: #3fb950;        /* links, titles */
+	--admin-accent-strong: #238636; /* button fills (white text on it) */
+	--admin-border: #30363d;
+	--admin-input-border: #6e7681;  /* form controls: 3:1 against the background */
+	--admin-danger: #f85149;        /* danger text/links */
+	--admin-danger-strong: #da3633; /* danger button fill */
+	--admin-radius: 6px;
+}
+
+body.admin {
+	margin: 0;
+	font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+	color: var(--admin-text);
+	background: var(--admin-bg);
+	line-height: 1.5;
+	/* Native controls (select dropdowns, file inputs, checkboxes,
+	   scrollbars) render in their dark variants too. */
+	color-scheme: dark;
+}
+
+body.admin *, body.admin *::before, body.admin *::after { box-sizing: border-box; }
+
+a { color: var(--admin-accent); }
+
+.admin-shell {
+	display: flex;
+	min-height: 100vh;
+}
+
+.admin-nav {
+	width: 200px;
+	flex-shrink: 0;
+	background: var(--admin-surface);
+	border-right: 1px solid var(--admin-border);
+	padding: 1rem 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.admin-nav-title {
+	font-weight: 700;
+	padding: 0 1rem 1rem;
+	color: var(--admin-accent);
+	text-decoration: none;
+	border-bottom: 1px solid var(--admin-border);
+	margin-bottom: 0.5rem;
+}
+
+.admin-nav a {
+	padding: 0.5rem 1rem;
+	color: var(--admin-text);
+	text-decoration: none;
+}
+.admin-nav a:hover { background: var(--admin-border); }
+
+.admin-logout { margin-top: auto; padding: 0.5rem 1rem; }
+.admin-logout button {
+	background: none;
+	border: none;
+	color: var(--admin-text-muted);
+	cursor: pointer;
+	padding: 0;
+	font-size: 0.9rem;
+}
+
+.admin-content {
+	flex: 1;
+	padding: 2rem;
+	max-width: 760px;
+}
+
+.admin-content h1 { margin-top: 0; }
+
+.admin-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 1.5rem;
+}
+.admin-table th, .admin-table td {
+	text-align: left;
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid var(--admin-border);
+}
+.admin-table th { color: var(--admin-text-muted); font-weight: 600; font-size: 0.85rem; }
+
+.admin-form label { display: block; margin-bottom: 1rem; font-weight: 600; font-size: 0.9rem; }
+.admin-form label .hint { display: block; font-weight: 400; color: var(--admin-text-muted); font-size: 0.82rem; margin-top: 0.15rem; }
+.admin-form input[type="text"],
+.admin-form input[type="url"],
+.admin-form input[type="password"],
+.admin-form input[type="email"],
+.admin-form input[type="number"],
+.admin-form input[type="datetime-local"],
+.admin-form textarea,
+.admin-form select {
+	display: block;
+	width: 100%;
+	padding: 0.5rem;
+	border: 1px solid var(--admin-input-border);
+	border-radius: var(--admin-radius);
+	margin-top: 0.3rem;
+	font: inherit;
+	font-weight: 400; /* not the label's bold */
+	box-sizing: border-box;
+	background: var(--admin-input-bg);
+	color: var(--admin-text);
+}
+.admin-form textarea { min-height: 8rem; resize: vertical; }
+.admin-form .checkbox { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; flex-wrap: wrap; }
+.admin-form .checkbox input { width: auto; }
+/* A checkbox label's .hint drops to its own indented line. */
+.admin-form .checkbox .hint { flex-basis: 100%; margin-top: 0; margin-left: 1.6rem; }
+.admin-form fieldset { border: 1px solid var(--admin-border); border-radius: var(--admin-radius); margin-bottom: 1rem; padding: 0.75rem 1rem; }
+.admin-form legend { font-weight: 600; font-size: 0.85rem; padding: 0 0.4rem; }
+
+.btn {
+	display: inline-block;
+	background: var(--admin-accent-strong);
+	color: white;
+	border: none;
+	border-radius: var(--admin-radius);
+	padding: 0.55rem 1.1rem;
+	cursor: pointer;
+	text-decoration: none;
+	font: inherit;
+}
+.btn-secondary { background: var(--admin-border); color: var(--admin-text); }
+.btn-danger { background: var(--admin-danger-strong); }
+
+.admin-error { color: var(--admin-danger); margin-bottom: 1rem; }
+.field-invalid { border-color: var(--admin-danger) !important; }
+.admin-empty { color: var(--admin-text-muted); }
+.admin-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.admin-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+
+.admin-row-actions { display: flex; gap: 0.75rem; align-items: center; }
+.admin-row-actions form { display: inline; margin: 0; }
+.btn-link {
+	background: none;
+	border: none;
+	padding: 0;
+	color: var(--admin-danger);
+	text-decoration: underline;
+	cursor: pointer;
+	font: inherit;
+}
+
+/* Inline controls outside .admin-form (e.g. the users list's reset-password
+   field). */
+.admin-row-actions input {
+	width: 10rem;
+	max-width: 100%;
+	padding: 0.3rem 0.5rem;
+	border: 1px solid var(--admin-input-border);
+	border-radius: var(--admin-radius);
+	background: var(--admin-input-bg);
+	color: var(--admin-text);
+	font: inherit;
+}
+
+.admin-avatar { border-radius: 6px; object-fit: cover; vertical-align: middle; }
+
+.admin-nav-view-site { margin-top: auto; border-top: 1px solid var(--admin-border); }
+
+/* Admin-only maintenance actions on the picks page (collapsed by default). */
+.admin-maintenance {
+	border: 1px solid var(--admin-border);
+	border-radius: var(--admin-radius);
+	background: var(--admin-surface);
+	padding: 0.6rem 1rem;
+	margin-bottom: 1.5rem;
+}
+.admin-maintenance summary { cursor: pointer; font-weight: 600; }
+.admin-maintenance .hint { color: var(--admin-text-muted); font-size: 0.88rem; }
+.admin-maintenance-status { font-size: 0.9rem; }
+.admin-maintenance form { margin: 0.5rem 0 0.25rem; }
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Current image/avatar previews with a remove option (pick form, account,
+   user form). */
+.admin-current-image { margin-bottom: 1rem; }
+.admin-current-image img { display: block; max-width: 240px; max-height: 160px; border-radius: var(--admin-radius); border: 1px solid var(--admin-border); margin-bottom: 0.5rem; object-fit: cover; }
+.admin-current-image img.avatar-preview { width: 64px; height: 64px; }
+.admin-danger-zone { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--admin-border); }
+.admin-danger-zone p { color: var(--admin-text-muted); font-size: 0.9rem; }
+.admin-notice { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 0.6rem 0.9rem; margin-bottom: 1rem; }
+
+/* --- Mobile nav toggle + responsive layout ---
+   Below the breakpoint, .admin-nav becomes an off-canvas panel toggled by
+   the hidden #admin-nav-toggle checkbox, and wide content wraps. */
+.admin-nav-toggle-input { display: none; }
+/* Keyboard focus shows on the visible ☰ button. */
+#admin-nav-toggle:focus-visible ~ .admin-shell .admin-nav-toggle-btn { outline: 2px solid var(--admin-accent); outline-offset: 2px; }
+.admin-topbar { display: none; }
+.admin-nav-backdrop { display: none; }
+
+@media (max-width: 780px) {
+	.admin-shell { flex-direction: column; }
+	/* The menu checkbox stays focusable (so the menu opens from the
+	   keyboard) but out of sight. */
+	.admin-nav-toggle-input { display: block; position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+	.admin-topbar {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid var(--admin-border);
+		background: var(--admin-surface);
+		position: sticky;
+		top: 0;
+		z-index: 1001;
+	}
+	.admin-nav-toggle-btn {
+		font-size: 1.4rem;
+		line-height: 1;
+		cursor: pointer;
+		padding: 0.15rem 0.4rem;
+		border-radius: var(--admin-radius);
+	}
+	.admin-nav-toggle-btn:hover { background: var(--admin-border); }
+	.admin-topbar-title { font-weight: 700; color: var(--admin-accent); text-decoration: none; }
+
+	.admin-nav {
+		position: fixed;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: 240px;
+		max-width: 80vw;
+		z-index: 1002;
+		transform: translateX(-100%);
+		visibility: hidden; /* closed: its links aren't in the tab order */
+		transition: transform 0.2s ease, visibility 0.2s;
+		box-shadow: 2px 0 8px rgba(0, 0, 0, 0.5);
+		overflow-y: auto;
+	}
+	#admin-nav-toggle:checked ~ .admin-shell .admin-nav {
+		transform: translateX(0);
+		visibility: visible;
+	}
+
+	.admin-nav-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		z-index: 1000;
+	}
+	#admin-nav-toggle:checked ~ .admin-shell .admin-nav-backdrop {
+		display: block;
+	}
+
+	.admin-content { padding: 1rem; max-width: 100%; box-sizing: border-box; }
+
+	.admin-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+	.admin-actions { flex-wrap: wrap; }
+	.admin-actions .btn, .admin-actions .btn-secondary { flex: 1 1 auto; text-align: center; }
+
+	/* Hide non-essential columns (class="hide-mobile"); reachable via Edit. */
+	.hide-mobile { display: none; }
+
+	/* Let rows wrap onto multiple lines instead of scrolling horizontally. */
+	.admin-table { display: block; }
+	.admin-table thead { display: none; }
+	.admin-table tbody { display: block; }
+	.admin-table tr {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		column-gap: 0.75rem;
+		row-gap: 0.3rem;
+		padding: 0.6rem 0;
+		border-bottom: 1px solid var(--admin-border);
+	}
+	.admin-table td {
+		border-bottom: none;
+		padding: 0;
+		width: auto;
+		flex: 0 1 auto;
+	}
+	/* Row actions get their own line once the row wraps. */
+	.admin-table td.admin-row-actions { flex-basis: 100%; margin-top: 0.15rem; }
+
+	/* Ellipsize long pick titles. */
+	.truncate {
+		display: inline-block;
+		max-width: 60vw;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		vertical-align: bottom;
+	}
+}
+
+/* Drag-to-reorder on the categories page. */
+.drag-cell { width: 2rem; }
+.drag-handle {
+	background: none;
+	border: none;
+	color: var(--admin-text-muted);
+	font-size: 1.3rem;
+	line-height: 1;
+	padding: 0.2rem 0.3rem;
+	cursor: grab;
+	touch-action: none;
+	user-select: none;
+}
+.drag-handle:hover, .drag-handle:focus-visible { color: var(--admin-text); }
+tr.dragging { background: var(--admin-surface); outline: 1px solid var(--admin-accent); }
+tr.dragging .drag-handle { cursor: grabbing; }
+.reorder-status { color: var(--admin-accent); margin-left: 0.5rem; }
+@media (max-width: 780px) {
+	.admin-table td.drag-cell { width: auto; align-self: center; }
+}
+
+.admin-badge {
+	display: inline-block;
+	font-size: 0.75rem;
+	padding: 0.05rem 0.45rem;
+	border-radius: 999px;
+	border: 1px solid var(--admin-accent);
+	color: var(--admin-accent);
+	white-space: nowrap;
+}
+.admin-badge-warn { border-color: var(--admin-danger); color: var(--admin-danger); }
+.admin-warning {
+	border: 1px solid var(--admin-danger);
+	border-radius: var(--admin-radius);
+	padding: 0.6rem 0.8rem;
+}
+
+.btn-link.btn-link-plain { color: var(--admin-accent); }
+
+.admin-sort { margin-bottom: 1rem; font-size: 0.9rem; }
+.admin-sort-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+.admin-sort-row label { display: flex; align-items: center; gap: 0.4rem; }
+.admin-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: 0.5rem 0.75rem; }
+.admin-filters label { display: flex; flex-direction: column; gap: 0.2rem; color: var(--admin-text-muted); font-size: 0.8rem; }
+.admin-filters select { width: 100%; font-size: 0.9rem; }
+.admin-clear { display: inline-block; margin-top: 0.6rem; }
+.admin-apply { margin-top: 0.6rem; }
+[hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.admin-sort select {
+	background: var(--admin-input-bg);
+	color: var(--admin-text);
+	border: 1px solid var(--admin-input-border);
+	border-radius: var(--admin-radius);
+	padding: 0.3rem 0.5rem;
+	font: inherit;
+}
+.admin-table th a { color: inherit; text-decoration: none; }
+.admin-table th a:hover { color: var(--admin-text); text-decoration: underline; }
+.admin-date { white-space: nowrap; color: var(--admin-text-muted); }
+.admin-table th { white-space: nowrap; }
+/* A flex td drops out of the table layout and misaligns its row's border. */
+td.admin-row-actions { display: table-cell; }
+/* Actions wrap onto another line rather than widening the table. */
+td.admin-row-actions > * { display: inline-block; margin: 0.1rem 0.75rem 0.1rem 0; white-space: nowrap; }
+/* The reset-password field and its button may wrap on a narrow phone. */
+@media (max-width: 780px) {
+	td.admin-row-actions > form { white-space: normal; }
+}
+@media (min-width: 781px) {
+	.admin-filters { grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); }
+}
+.admin-title-link { color: var(--admin-text); text-decoration: none; }
+.admin-title-link:hover { color: var(--admin-accent); text-decoration: underline; }
+.admin-views { color: var(--admin-text-muted); text-align: right; }
+.mobile-only { display: none; }
+@media (max-width: 780px) {
+	.mobile-only { display: inline; }
+	.admin-views { text-align: left; }
+}
+
+/* List pages get the room their tables need; forms stay narrow. */
+@media (min-width: 781px) {
+	.admin-content:has(.admin-table) { max-width: 1200px; }
+}
+.admin-content { min-width: 0; }
+/* Medium widths: secondary columns move to a line under the title. */
+.admin-meta { display: none; color: var(--admin-text-muted); font-size: 0.82rem; margin-top: 0.15rem; }
+@media (min-width: 781px) and (max-width: 1199px) {
+	.admin-table .col-wide { display: none; }
+	.admin-meta { display: block; }
+}
+.extra-categories { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.extra-categories legend { padding: 0 0.3rem; }
+.extra-categories .hint { flex-basis: 100%; }
+.admin-extra-cat { color: var(--admin-text-muted); }
+.extra-categories .hint { display: block; font-weight: 400; color: var(--admin-text-muted); font-size: 0.82rem; }
+.admin-form input[type="datetime-local"] { width: auto; color-scheme: dark; }
+.admin-form fieldset > .hint { display: block; font-weight: 400; color: var(--admin-text-muted); font-size: 0.82rem; margin-top: 0.3rem; }
+.lookback { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; margin-bottom: 1rem; font-weight: 600; font-size: 0.9rem; }
+.lookback input, .lookback select { width: auto !important; display: inline-block !important; margin-top: 0 !important; }
+.lookback input { width: 5rem !important; }
+.lookback .hint { flex-basis: 100%; font-weight: 400; color: var(--admin-text-muted); font-size: 0.82rem; }
+
+/* Theme editor */
+.admin-form textarea.css-editor {
+	font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+	font-size: 0.8rem; line-height: 1.45; white-space: pre; tab-size: 4;
+	height: 70vh; min-height: 20rem; width: 100%;
+}
+.theme-mode, .theme-preview-size { display: inline-flex; border: 1px solid var(--admin-border); border-radius: var(--admin-radius); overflow: hidden; }
+.theme-mode { margin-bottom: 1rem; }
+.theme-mode-btn { background: transparent; color: var(--admin-text); border: 0; padding: 0.45rem 1rem; cursor: pointer; font: inherit; }
+.theme-mode-btn.is-active { background: var(--admin-border); font-weight: 600; }
+.theme-simple fieldset { border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; display: grid; gap: 0.75rem; }
+.theme-simple legend { padding: 0 0.4rem; font-weight: 600; }
+.theme-colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.6rem 0.75rem; }
+.theme-editor [hidden] { display: none !important; }
+.theme-color span { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.2rem; }
+.admin-form .theme-color input[type=color] { width: 2.6rem; height: 2.2rem; padding: 0.1rem; flex: none; cursor: pointer; }
+.admin-form .theme-color input[type=text] { flex: 1; min-width: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; }
+.admin-form input[type=range] { width: 100%; padding: 0; }
+.theme-simple output { color: var(--admin-text-muted); font-weight: 400; margin-left: 0.3rem; }
+.theme-preview-bar { display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.theme-preview-bar select { width: auto; }
+.theme-preview-frame { height: 75vh; overflow: hidden; border: 1px solid var(--admin-border); border-radius: var(--admin-radius); background: #fff; position: relative; }
+.theme-preview-frame iframe { border: 0; transform-origin: 0 0; display: block; }
+.admin-content:has(.theme-editor.has-js) { max-width: 1400px; }
+@media (min-width: 1000px) {
+	.theme-editor.has-js { display: grid; grid-template-columns: minmax(22rem, 26rem) 1fr; gap: 1.5rem; align-items: start; max-width: none; }
+	.theme-editor.has-js.mode-css { grid-template-columns: minmax(26rem, 1fr) minmax(24rem, 1fr); }
+	.theme-preview { position: sticky; top: 1rem; }
+}
+@media (max-width: 999px) {
+	.theme-preview { margin-top: 1.5rem; }
+	.theme-preview-frame { height: 70vh; }
+}
+.theme-pairing { border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 0.75rem 1rem 1rem; margin: 0 0 1rem; }
+.theme-pairing legend { padding: 0 0.4rem; font-weight: 600; }
+.theme-pairing .checkbox { margin-bottom: 0.4rem; }
+.theme-pairing .theme-partner { margin: 0 0 0.75rem 1.6rem; font-weight: 400; }
+.admin-form .theme-pairing [hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+	.admin-nav { transition: none !important; }
+}

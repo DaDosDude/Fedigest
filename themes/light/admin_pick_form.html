@@ -1,0 +1,318 @@
+{{define "admin_pick_form.html"}}
+{{template "admin_head" (adminHead "Pick" .IsAdmin)}}
+	<div class="admin-toolbar">
+		<h1>{{if .IsNew}}New pick{{else}}Edit pick{{end}}</h1>
+		{{if and .Pick (not .IsNew)}}
+		<div class="admin-row-actions">
+			<a class="btn btn-secondary" href="/p/{{.Pick.ID}}-{{.Pick.Slug}}" target="_blank" rel="noopener">
+				{{if eq (print .Pick.Status) "published"}}View live ↗{{else}}Preview draft ↗{{end}}
+			</a>
+			{{/* Separate form: forms can't nest. */}}
+			<form method="post" action="/admin/picks/{{.Pick.ID}}/delete" onsubmit="return confirm('Delete this pick? This can\'t be undone.');">
+				<button type="submit" class="btn btn-secondary">Delete</button>
+			</form>
+		</div>
+		{{end}}
+	</div>
+	{{if .Error}}<p class="admin-error" role="alert">{{.Error}}{{if .HadUpload}} Choose your image again too: uploads aren't kept when the form comes back.{{end}}</p>{{end}}
+	{{if .Duplicates}}
+	<div class="admin-warning">
+		<p>This post or its linked article has already been picked:</p>
+		<ul>
+			{{range .Duplicates}}<li><a href="/p/{{.ID}}-{{.Slug}}" target="_blank" rel="noopener">{{.Title}}</a> <span class="hint">({{.Status}}, {{.DisplayDate}})</span></li>{{end}}
+		</ul>
+		<p>Press the same button again to create it anyway.{{if .HadUpload}} Re-attach your uploaded image first; it wasn't kept.{{end}}</p>
+	</div>
+	{{end}}
+	<p id="form-validation-error" class="admin-error" role="alert" style="display:none"></p>
+
+	{{if .Categories}}
+	<form method="post" novalidate
+		action="{{if .IsNew}}/admin/picks/new{{else}}/admin/picks/{{.Pick.ID}}/edit{{end}}"
+		enctype="multipart/form-data" class="admin-form" id="pick-form"
+		onsubmit="return fedigestValidatePickForm(event)">
+
+		<fieldset>
+			<legend>Post type</legend>
+			<label class="checkbox">
+				<input type="radio" name="source_type" value="fedi" id="type-fedi"
+					{{if or (not .Pick) (ne (print .Pick.SourceType) "local")}}checked{{end}}
+					onchange="fedigestSyncPickType()">
+				Linked from Lemmy / PieFed / Mbin
+			</label>
+			<label class="checkbox">
+				<input type="radio" name="source_type" value="local" id="type-local"
+					{{if and .Pick (eq (print .Pick.SourceType) "local")}}checked{{end}}
+					onchange="fedigestSyncPickType()">
+				Local post (no fedi link)
+			</label>
+		</fieldset>
+
+		<div id="fedi-fields"{{if and .Pick (eq (print .Pick.SourceType) "local")}} style="display:none"{{end}}>
+			<label>Platform
+				<select name="source_platform">
+					<option value="lemmy" {{if and .Pick (eq .Pick.SourcePlatform.String "lemmy")}}selected{{end}}>Lemmy</option>
+					<option value="piefed" {{if and .Pick (eq .Pick.SourcePlatform.String "piefed")}}selected{{end}}>PieFed</option>
+					<option value="mbin" {{if and .Pick (eq .Pick.SourcePlatform.String "mbin")}}selected{{end}}>Mbin</option>
+				</select>
+			</label>
+			<label>Original post URL
+				<input type="text" inputmode="url" autocapitalize="off" spellcheck="false" name="original_url" id="original_url" placeholder="lemmy.world/post/123"
+					value="{{if .Pick}}{{.Pick.OriginalURL.String}}{{end}}">
+			</label>
+			<button type="button" class="btn btn-secondary" id="fetch-metadata-btn" onclick="fedigestFetchMetadata()">
+				Fetch metadata from URL
+			</button>
+			<span id="fetch-metadata-status" class="hint" role="status"></span>
+			<label>Link URL
+				<input type="text" inputmode="url" autocapitalize="off" spellcheck="false" name="link_url" id="link_url" placeholder="https://..."
+					value="{{if .Pick}}{{.Pick.LinkURL.String}}{{end}}">
+				<span class="hint">For link posts: the article the original post links to. Filled in by Fetch metadata; shown as a link on the post page.</span>
+			</label>
+			<label class="checkbox">
+				<input type="checkbox" name="use_original_as_body" id="use_original_as_body"
+					{{if and .Pick .Pick.UseOriginalAsBody}}checked{{end}}>
+				Use original post as body
+				<span class="hint">Renders the fetched original post content below your own body text.</span>
+			</label>
+			<input type="hidden" name="original_body_cache" id="original_body_cache"
+				value="{{if .Pick}}{{.Pick.OriginalBodyCache.String}}{{end}}">
+			<input type="hidden" name="original_author" id="original_author"
+				value="{{if .Pick}}{{.Pick.OriginalAuthor.String}}{{end}}">
+			<input type="hidden" name="original_community" id="original_community"
+				value="{{if .Pick}}{{.Pick.OriginalCommunity.String}}{{end}}">
+			<input type="hidden" name="community_post_url" id="community_post_url"
+				value="{{if .Pick}}{{.Pick.CommunityPostURL.String}}{{end}}">
+			<input type="hidden" name="original_ap_id" id="original_ap_id"
+				value="{{if .Pick}}{{.Pick.OriginalApID.String}}{{end}}">
+			<input type="hidden" name="original_published_at" id="original_published_at"
+				value="{{if .Pick}}{{.Pick.OriginalPublishedAt.String}}{{end}}">
+		</div>
+
+		<label>Title
+			<input type="text" name="title" id="title" required
+				value="{{if .Pick}}{{.Pick.Title}}{{end}}">
+		</label>
+
+		<label>Excerpt
+			<textarea name="excerpt" id="excerpt" required oninput="document.getElementById('excerpt_auto').value = '0'; document.getElementById('excerpt-auto-note').style.display = 'none';">{{if .Pick}}{{.Pick.Excerpt}}{{end}}</textarea>
+			<input type="hidden" name="excerpt_auto" id="excerpt_auto" value="{{if and .Pick .Pick.ExcerptAuto}}1{{else}}0{{end}}">
+			<span class="hint" id="excerpt-auto-note"{{if not (and .Pick .Pick.ExcerptAuto)}} style="display:none"{{end}}>Automatic: cards show the opening paragraph of the body, or of the original post (two paragraphs if the first is short). Type here to write your own excerpt instead.</span>
+			<span class="hint">Short teaser shown on the frontpage and category lists.</span>
+		</label>
+
+		<label>Body
+			<textarea name="body">{{if .Pick}}{{.Pick.Body}}{{end}}</textarea>
+			<span class="hint">Full write-up shown on the post page. Leave blank to show the excerpt there instead.</span>
+		</label>
+
+		<label>Category
+			<select name="category_id" id="category_id">
+				{{range .Categories}}
+				<option value="{{.ID}}" {{if and $.Pick (eq .ID $.Pick.CategoryID)}}selected{{end}}>{{.Name}}</option>
+				{{end}}
+			</select>
+		</label>
+		{{if multiCategory}}
+		<fieldset class="extra-categories">
+			<legend>Also show in</legend>
+			{{range .Categories}}<label class="checkbox"><input type="checkbox" name="extra_category" value="{{.ID}}"{{if inSet $.ExtraSet .ID}} checked{{end}}> {{.Name}}</label>{{end}}
+			<span class="hint">Extra categories besides the main one above. The pick appears on each of their pages and feeds.</span>
+		</fieldset>
+		<script>
+		(function () {
+			var main = document.querySelector('select[name=category_id]');
+			function sync() {
+				document.querySelectorAll('.extra-categories input[name=extra_category]').forEach(function (cb) {
+					cb.closest('label').style.display = cb.value === main.value ? 'none' : '';
+				});
+			}
+			if (main) { main.addEventListener('change', sync); sync(); }
+		})();
+		</script>
+		{{end}}
+
+		<fieldset>
+			<legend>Image</legend>
+			{{if .Pick}}{{with .Pick.DisplayImage "/uploads"}}
+			<div class="admin-current-image">
+				<img src="{{.}}" alt="" loading="lazy">
+				<label class="checkbox">
+					<input type="checkbox" name="remove_image">
+					Remove this image
+					<span class="hint">The pick is shown without an image. An uploaded file is deleted.</span>
+				</label>
+			</div>
+			{{end}}{{end}}
+			<label>Image URL
+				<input type="text" inputmode="url" autocapitalize="off" spellcheck="false" name="image_url" placeholder="https://..."
+					value="{{if .Pick}}{{.Pick.ImageURL.String}}{{end}}">
+			</label>
+			<label>Or upload an image
+				<input type="file" name="image_upload" accept="image/png,image/jpeg,image/gif,image/webp,image/x-icon">
+				<span class="hint">PNG, JPEG, GIF, WebP or ICO, up to 10 MB. An upload always overrides a linked image.</span>
+			</label>
+			<label>Alt text
+				<input type="text" name="alt_text" value="{{if .Pick}}{{.Pick.AltText.String}}{{end}}">
+				<span class="hint">Falls back to the title if left blank.</span>
+			</label>
+		</fieldset>
+
+		{{if .Duplicates}}<input type="hidden" name="confirm_duplicate" value="1">{{end}}
+		{{/* Needs JS (local time to UTC), so hidden without it. */}}
+		<label id="publish-at-field" hidden>Publish automatically at
+			<input type="datetime-local" id="publish-at-local">
+			<input type="hidden" name="publish_at" id="publish-at" value="{{if .Pick}}{{.Pick.PublishAt.String}}{{end}}">
+			<span class="hint">Optional. Pick a time and press Schedule; the pick stays a draft until then. Clear it and save to unschedule.</span>
+		</label>
+		<div class="admin-actions">
+			<button class="btn btn-secondary" type="submit" name="action" value="draft" id="draft-button">Save draft</button>
+			<button class="btn" type="submit" name="action" value="publish">Publish now</button>
+		</div>
+		<script>
+		(function () {
+			var local = document.getElementById('publish-at-local');
+			var hidden = document.getElementById('publish-at');
+			var draftBtn = document.getElementById('draft-button');
+			document.getElementById('publish-at-field').hidden = false;
+			function pad(n) { return String(n).padStart(2, '0'); }
+			if (hidden.value) {
+				var d = new Date(hidden.value);
+				if (!isNaN(d)) local.value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+			}
+			function sync() {
+				var d = local.value ? new Date(local.value) : null;
+				hidden.value = d && !isNaN(d) ? d.toISOString() : '';
+				draftBtn.textContent = hidden.value ? 'Schedule' : 'Save draft';
+			}
+			local.addEventListener('input', sync);
+			local.addEventListener('change', sync);
+			sync();
+		})();
+		</script>
+	</form>
+	{{end}}
+	<script>
+		async function fedigestFetchMetadata() {
+			const url = document.getElementById('original_url').value.trim();
+			const platform = document.querySelector('select[name="source_platform"]').value;
+			const status = document.getElementById('fetch-metadata-status');
+			if (!url) {
+				status.textContent = 'Paste the original post URL first.';
+				return;
+			}
+			status.textContent = 'Fetching…';
+			try {
+				const resp = await fetch('/admin/picks/fetch-metadata?url=' + encodeURIComponent(url) + '&platform=' + encodeURIComponent(platform));
+				const data = await resp.json();
+				if (!resp.ok || data.error) {
+					status.textContent = data.error || 'Could not fetch metadata — fill the fields in manually.';
+					return;
+				}
+				const titleField = document.querySelector('input[name="title"]');
+				const excerptField = document.querySelector('textarea[name="excerpt"]');
+				const bodyField = document.querySelector('textarea[name="body"]');
+				const imageField = document.querySelector('input[name="image_url"]');
+				const cacheField = document.getElementById('original_body_cache');
+				const authorField = document.getElementById('original_author');
+				const communityField = document.getElementById('original_community');
+				if (titleField && !titleField.value) titleField.value = data.title || '';
+				const excerptAuto = document.getElementById('excerpt_auto');
+				// Fill the excerpt if empty or still automatic, falling back to
+				// the title for posts without body text.
+				if (excerptField && (!excerptField.value || excerptAuto.value === '1')) {
+					excerptField.value = data.excerpt || data.body || data.title || '';
+					excerptAuto.value = '1';
+					document.getElementById('excerpt-auto-note').style.display = '';
+				}
+				if (bodyField && !bodyField.value && data.body) bodyField.value = data.body;
+				if (imageField && !imageField.value && data.image_url) imageField.value = data.image_url;
+				// Source-derived fields always follow the latest fetch.
+				if (cacheField) cacheField.value = data.body || '';
+				if (authorField) authorField.value = data.author_handle || '';
+				const linkField = document.getElementById('link_url');
+				if (linkField) linkField.value = data.link_url || '';
+				const pubField = document.getElementById('original_published_at');
+				if (pubField) pubField.value = data.published_at || '';
+				const apField = document.getElementById('original_ap_id');
+				if (apField) apField.value = data.ap_id || '';
+				const cpField = document.getElementById('community_post_url');
+				if (cpField) cpField.value = data.community_post_url || '';
+				if (communityField) communityField.value = data.community_handle || '';
+
+				if (data.platform) {
+					// Found under a different platform; correct the dropdown.
+					const platformField = document.querySelector('select[name="source_platform"]');
+					if (platformField) platformField.value = data.platform;
+					const platformLabels = { lemmy: 'Lemmy', piefed: 'PieFed', mbin: 'Mbin' };
+					status.textContent = 'Fetched via ' + (platformLabels[data.platform] || data.platform) + ' (platform updated) — review the fields above before saving.';
+				} else {
+					status.textContent = 'Fetched — review the fields above before saving.';
+				}
+			} catch (e) {
+				status.textContent = 'Could not reach the fetch endpoint — fill the fields in manually.';
+			}
+		}
+
+		// The fedi fields only apply to linked picks.
+		function fedigestSyncPickType() {
+			const local = document.getElementById('type-local');
+			document.getElementById('fedi-fields').style.display = local && local.checked ? 'none' : '';
+		}
+
+		// Details fetched from the original post belong to that post: when
+		// the URL changes they're cleared until the new one is fetched.
+		(function () {
+			const urlField = document.getElementById('original_url');
+			if (!urlField) return;
+			const initial = urlField.value.trim();
+			let cleared = false;
+			urlField.addEventListener('input', function () {
+				if (cleared || !initial || urlField.value.trim() === initial) return;
+				cleared = true;
+				['original_body_cache', 'original_author', 'original_community', 'community_post_url', 'original_ap_id', 'original_published_at'].forEach(function (id) {
+					const el = document.getElementById(id);
+					if (el) el.value = '';
+				});
+				document.getElementById('fetch-metadata-status').textContent = 'The post URL changed: press Fetch metadata to load the new post\u2019s details.';
+			});
+		})();
+
+		// Shows a visible summary of missing required fields, since the
+		// browser's bubble is easy to miss on a long form.
+		function fedigestValidatePickForm(event) {
+			const form = event.target;
+			const errorBox = document.getElementById('form-validation-error');
+			const missing = [];
+			form.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
+			const linked = document.getElementById('type-fedi');
+
+			[
+				{ id: 'title', label: 'Title' },
+				{ id: 'excerpt', label: 'Excerpt' },
+				{ id: 'category_id', label: 'Category' },
+				...(linked && linked.checked ? [{ id: 'original_url', label: 'Original post URL (or choose "Local post")' }] : []),
+			].forEach(({ id, label }) => {
+				const el = document.getElementById(id);
+				if (el && !el.value.trim()) {
+					missing.push(label);
+					el.classList.add('field-invalid');
+				}
+			});
+
+			if (missing.length) {
+				event.preventDefault();
+				errorBox.textContent = 'Before you can save: ' + missing.join(', ') + (missing.length > 1 ? ' are required.' : ' is required.');
+				errorBox.style.display = 'block';
+				errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				const firstInvalid = form.querySelector('.field-invalid');
+				if (firstInvalid) firstInvalid.focus();
+				return false;
+			}
+
+			errorBox.style.display = 'none';
+			return true;
+		}
+	</script>
+{{template "admin_foot" .}}
+{{end}}

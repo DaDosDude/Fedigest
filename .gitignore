@@ -1,0 +1,13 @@
+/fedigest
+/data/
+/uploads/*
+!/uploads/.gitkeep
+.env
+server.log
+backups/
+.previous.tar.gz
+.previous-commit
+# Release archives (deploy.sh reads ../fedigest.tar.gz or one you pass)
+*.tar.gz
+# Private development notes
+CLAUDE.md

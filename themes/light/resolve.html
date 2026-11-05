@@ -1,0 +1,154 @@
+{{define "resolve.html"}}
+{{template "head" .Head}}
+	{{template "site_header" .}}
+	<div class="layout">
+		<main id="main" class="site-main">
+			<h1>Interact from your instance</h1>
+			<p id="resolve-status" class="resolve-status" role="status" style="display:none"></p>
+			<p>Enter your home Lemmy or PieFed instance and we'll send you to this post there, so you can upvote, comment, or save it with your own account.</p>
+
+			<form id="resolve-form" class="resolve-form" onsubmit="return fedigestResolve(event)">
+				<label>Your instance
+					<input type="text" id="resolve-instance" placeholder="e.g. lemmy.world" inputmode="url" autocapitalize="off" spellcheck="false" autocomplete="off" autofocus>
+				</label>
+				<button class="btn" type="submit" id="resolve-btn">Take me there</button>
+			</form>
+			<p id="resolve-error" class="error" role="alert" style="display:none"></p>
+			<noscript><p class="error">This needs JavaScript, since your browser does the lookup. You can still open the post with "View original" and search for it on your instance.</p></noscript>
+
+			<p class="hint">We remember your instance in this browser for next time. Your browser looks the post up on your instance directly, so nothing about it is sent to this site.</p>
+		</main>
+		<aside class="sidebar">{{template "sidebar_blocks" .SidebarBlocks}}</aside>
+	</div>
+	<script>
+		const fedigestTarget = {{.TargetURL}};
+
+		// Asks the visitor's instance for its local copy of the post via
+		// resolve_object (Lemmy /api/v3, PieFed /api/alpha; both allow CORS).
+		// Returns the local post URL, or null.
+		async function fedigestLookup(instance) {
+			for (const api of ['/api/v3', '/api/alpha']) {
+				const ctrl = new AbortController();
+				const timer = setTimeout(() => ctrl.abort(), 5000);
+				try {
+					const resp = await fetch('https://' + instance + api + '/resolve_object?q=' + encodeURIComponent(fedigestTarget), { signal: ctrl.signal });
+					if (!resp.ok) continue;
+					const data = await resp.json();
+					const id = data && data.post && data.post.post && data.post.post.id;
+					if (Number.isInteger(id)) return 'https://' + instance + '/post/' + id;
+				} catch (e) {
+					/* not this API, unreachable, or timed out: try the next / fall back */
+				} finally {
+					clearTimeout(timer);
+				}
+			}
+			return null;
+		}
+
+		function fedigestRedirect(instance, local) {
+			// Fall back to the instance's search, which resolves it once logged
+			// in. Lemmy/PieFed read q (+ type=Url); Mbin reads search[q]. Each
+			// ignores the other's parameters.
+			const q = encodeURIComponent(fedigestTarget);
+			window.location.href = local || ('https://' + instance + '/search?q=' + q + '&type=Url&search%5Bq%5D=' + q);
+		}
+
+		function fedigestShowStatus(text) {
+			const status = document.getElementById('resolve-status');
+			status.textContent = text;
+			status.style.display = 'block';
+			return status;
+		}
+
+		async function fedigestGo(instance) {
+			fedigestCancelCountdown();
+			fedigestShowStatus('Finding this post on ' + instance + '…');
+			document.getElementById('resolve-btn').disabled = true;
+			fedigestRedirect(instance, await fedigestLookup(instance));
+		}
+
+		function fedigestResolve(event) {
+			event.preventDefault();
+			const errorBox = document.getElementById('resolve-error');
+			let instance = document.getElementById('resolve-instance').value.trim();
+			instance = instance.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+
+			if (!instance || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(instance)) {
+				errorBox.textContent = 'Enter a valid instance domain, like lemmy.world.';
+				errorBox.style.display = 'block';
+				return false;
+			}
+			errorBox.style.display = 'none';
+			try {
+				localStorage.setItem('fedigest_home_instance', instance);
+			} catch (e) { /* not fatal — just means it won't be remembered */ }
+			fedigestGo(instance);
+			return false;
+		}
+
+		// Remembered instance: count down before jumping so it can be changed;
+		// the lookup runs meanwhile.
+		const FEDIGEST_COUNTDOWN = 3;
+		let fedigestCountdownTimer = null;
+
+		function fedigestCancelCountdown() {
+			if (fedigestCountdownTimer === null) return false;
+			clearInterval(fedigestCountdownTimer);
+			fedigestCountdownTimer = null;
+			return true;
+		}
+
+		(function () {
+			const input = document.getElementById('resolve-instance');
+			let saved = null;
+			try { saved = localStorage.getItem('fedigest_home_instance'); } catch (e) { /* private browsing etc. */ }
+			if (!saved) return;
+			input.value = saved;
+			input.removeAttribute('autofocus');
+			if (new URLSearchParams(window.location.search).get('change')) return;
+
+			let remaining = FEDIGEST_COUNTDOWN;
+			let lookup = fedigestLookup(saved); // start now, use when the countdown ends
+			const status = fedigestShowStatus('');
+			const label = document.createElement('span');
+			const goNow = document.createElement('button');
+			goNow.type = 'button';
+			goNow.className = 'resolve-go';
+			goNow.textContent = 'Go now';
+			const change = document.createElement('button');
+			change.type = 'button';
+			change.className = 'resolve-change';
+			change.textContent = 'Change instance';
+			const actions = document.createElement('span');
+			actions.className = 'resolve-actions';
+			actions.append(goNow, change);
+			status.append(label, actions);
+			const render = () => { label.textContent = 'Taking you to ' + saved + ' in ' + remaining + '…'; };
+			render();
+
+			const stop = () => {
+				if (!fedigestCancelCountdown()) return;
+				lookup = null;
+				status.textContent = 'Enter the instance you want to use.';
+				input.focus();
+				input.select();
+			};
+			change.addEventListener('click', stop);
+			const go = async () => {
+				if (!fedigestCancelCountdown()) return;
+				label.textContent = 'Taking you to ' + saved + '…';
+				actions.remove();
+				fedigestRedirect(saved, await lookup);
+			};
+			goNow.addEventListener('click', go);
+			input.addEventListener('input', stop);
+
+			fedigestCountdownTimer = setInterval(() => {
+				remaining--;
+				if (remaining > 0) { render(); return; }
+				go();
+			}, 1000);
+		})();
+	</script>
+{{template "foot" .}}
+{{end}}
