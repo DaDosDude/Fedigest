@@ -82,6 +82,9 @@ type pickCard struct {
 	Curator  *models.User       // nil if the lookup failed
 	Category *models.Category   // nil if the lookup failed or hidden
 	Extra    []*models.Category // extra categories, shown after Category
+	// LinkByline is always false on cards: the card is already one link,
+	// so its byline can't hold others (see pick_byline).
+	LinkByline bool
 }
 
 // attachCurators resolves curators and categories once per distinct ID,
@@ -309,6 +312,7 @@ func (s *Server) HandleAuthorPage(w http.ResponseWriter, r *http.Request, userna
 type postPageData struct {
 	*models.Pick
 	CanEdit       bool // the logged-in user may edit this pick
+	LinkByline    bool // the byline's curator and categories are links
 	SiteName      string
 	Categories    []*models.Category
 	SidebarBlocks []*models.SidebarBlock
@@ -369,6 +373,7 @@ func (s *Server) HandlePostPage(w http.ResponseWriter, r *http.Request, id int64
 
 	data := postPageData{
 		Pick:          pick,
+		LinkByline:    true,
 		SiteName:      s.siteName(),
 		Categories:    cats,
 		SidebarBlocks: s.sidebarBlocks(),

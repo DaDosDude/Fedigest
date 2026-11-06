@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+**Fixes**
+- The byline on a post page links the curator's name to their author
+  page and each category to its page. Author pages existed (and were in
+  the sitemap) but nothing on the site linked to them. Cards keep a
+  plain-text byline, since the whole card is already a link, and auto
+  posts keep their label without a link.
+
 ## 0.1.3
 
 First public release, on GitHub. Edit links on public pages, shorter

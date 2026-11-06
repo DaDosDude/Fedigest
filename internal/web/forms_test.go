@@ -393,3 +393,35 @@ func TestFooterLinksToSource(t *testing.T) {
 		t.Errorf("footer has no Source link to %q", ts.srv.Cfg.SourceURL)
 	}
 }
+
+func TestPostPageBylineLinks(t *testing.T) {
+	ts := newTestSite(t)
+	c := ts.client("")
+	body := ts.checkPage(c, ts.pick, http.StatusOK)
+	if !strings.Contains(body, `By <a href="/author/admin">`) {
+		t.Error("post page byline doesn't link the curator to their author page")
+	}
+	if !strings.Contains(body, ` in <a href="/c/news">News</a>`) {
+		t.Error("post page byline doesn't link the category")
+	}
+	if body := ts.checkPage(c, "/", http.StatusOK); strings.Contains(body, `href="/author/`) || strings.Contains(body, ` in <a href="/c/`) {
+		t.Error("card bylines must stay plain text (the card is already a link)")
+	}
+	ts.checkPage(c, "/author/admin", http.StatusOK)
+
+	// Auto posts show the label, without a link.
+	admin, _ := ts.srv.Users.GetByUsername("admin")
+	id, err := ts.srv.Picks.Create(&models.Pick{Slug: "auto", Title: "Auto", Excerpt: "E", AutoIngested: true,
+		CategoryID: ts.catID, CuratorID: admin.ID, SourceType: models.SourceTypeLocal, Status: models.PickStatusPublished,
+		PublishedAt: sql.NullString{String: time.Now().UTC().Format(time.RFC3339), Valid: true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body = ts.checkPage(c, fmt.Sprintf("/p/%d-auto", id), http.StatusOK)
+	if strings.Contains(body, `By <a href="/author/`) {
+		t.Error("auto post byline links to the admin's author page")
+	}
+	if !strings.Contains(body, ` in <a href="/c/news">News</a>`) {
+		t.Error("auto post byline doesn't link the category")
+	}
+}

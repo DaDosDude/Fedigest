@@ -264,18 +264,23 @@
 </html>
 {{end}}
 
-{{/* pick_byline takes a pickCard or postPageData. Plain text, no links,
-     since cards are already links. Auto-ingested picks show the
-     configurable auto-post label rather than the source admin's name. */}}
+{{/* pick_byline takes a pickCard or postPageData. On cards it's plain
+     text, since the card is already a link; on the post page
+     (.LinkByline) the curator's name links to their author page and the
+     categories to their pages. Auto-ingested picks show the configurable
+     auto-post label rather than the source admin's name, with no link. */}}
+{{/* byline_categories: " in Main, Extra" (links on the post page). */}}
+{{define "byline_categories"}}{{if .Category}} in {{if .LinkByline}}<a href="{{categoryURL .Category}}">{{.Category.Name}}</a>{{range .Extra}}, <a href="{{categoryURL .}}">{{.Name}}</a>{{end}}{{else}}{{.Category.Name}}{{range .Extra}}, {{.Name}}{{end}}{{end}}{{end}}{{end}}
+
 {{define "pick_byline"}}
 <div class="pick-byline">
 	{{if .AutoIngested}}
 	{{/* Auto-ingested: the admin-set label and the default icon. */}}
 	<img src="/static/default-icon.png" alt="" class="byline-avatar" width="20" height="20">
-	<span class="byline-curator">By {{autoPostLabel}} <span class="byline-date">{{.DisplayDate}}</span>{{if .Category}} in {{.Category.Name}}{{range .Extra}}, {{.Name}}{{end}}{{end}}</span>
+	<span class="byline-curator">By {{autoPostLabel}} <span class="byline-date">{{.DisplayDate}}</span>{{template "byline_categories" .}}</span>
 	{{else if .Curator}}
 	<img src="{{userAvatar .Curator}}" alt="" class="byline-avatar" width="20" height="20">
-	<span class="byline-curator">By {{.Curator.DisplayNameOrUsername}} <span class="byline-date">{{.DisplayDate}}</span>{{if .Category}} in {{.Category.Name}}{{range .Extra}}, {{.Name}}{{end}}{{end}}</span>
+	<span class="byline-curator">By {{if .LinkByline}}<a href="{{authorURL .Curator}}">{{.Curator.DisplayNameOrUsername}}</a>{{else}}{{.Curator.DisplayNameOrUsername}}{{end}} <span class="byline-date">{{.DisplayDate}}</span>{{template "byline_categories" .}}</span>
 	{{end}}
 	{{if eq (print .SourceType) "fedi"}}
 		{{if or .OriginalAuthor.Valid .OriginalCommunity.Valid}}

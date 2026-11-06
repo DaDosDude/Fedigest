@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html/template"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -54,6 +55,10 @@ func New(cfg *config.Config, conn *sql.DB, themesRoot string, registry *adapters
 
 func (s *Server) funcMap() template.FuncMap {
 	return template.FuncMap{
+		// authorURL is a curator's public author page.
+		"authorURL": func(u *models.User) string { return "/author/" + url.PathEscape(u.Username) },
+		// categoryURL is a category's page.
+		"categoryURL": func(c *models.Category) string { return "/c/" + url.PathEscape(c.Slug) },
 		// sourceURL is where this site's source code is (footer link).
 		"sourceURL": func() string { return s.Cfg.SourceURL },
 		// version is "v0.1.1" for a release build, "dev" otherwise.
