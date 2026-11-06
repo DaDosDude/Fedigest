@@ -115,13 +115,9 @@ func (s *Server) funcMap() template.FuncMap {
 		},
 		// autoPostLabel is the byline text shown on auto-ingested picks in
 		// place of a curator.
-		"autoPostLabel": func() string {
-			ss, err := s.SiteSettings.Get()
-			if err == nil && ss.AutoPostLabel != "" {
-				return ss.AutoPostLabel
-			}
-			return "Auto post"
-		},
+		"autoPostLabel": s.autoPostLabel,
+		// autoPostsURL is the auto-post label's page (every auto post).
+		"autoPostsURL":  func() string { return autoPostsPath },
 		"multiCategory": s.SiteSettings.MultiCategory,
 		// themeLabel turns a theme's name into its display name.
 		"themeLabel": themeLabel,

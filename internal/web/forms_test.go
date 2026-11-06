@@ -394,22 +394,26 @@ func TestFooterLinksToSource(t *testing.T) {
 	}
 }
 
-func TestPostPageBylineLinks(t *testing.T) {
+func TestBylineLinks(t *testing.T) {
 	ts := newTestSite(t)
 	c := ts.client("")
-	body := ts.checkPage(c, ts.pick, http.StatusOK)
-	if !strings.Contains(body, `By <a href="/author/admin">`) {
-		t.Error("post page byline doesn't link the curator to their author page")
+	for _, path := range []string{ts.pick, "/"} { // post page and card
+		body := ts.checkPage(c, path, http.StatusOK)
+		if !strings.Contains(body, `By <a class="byline-link" href="/author/admin">`) {
+			t.Errorf("%s: byline doesn't link the curator to their author page", path)
+		}
+		if !strings.Contains(body, ` in <a class="byline-link" href="/c/news">News</a>`) {
+			t.Errorf("%s: byline doesn't link the category", path)
+		}
 	}
-	if !strings.Contains(body, ` in <a href="/c/news">News</a>`) {
-		t.Error("post page byline doesn't link the category")
-	}
-	if body := ts.checkPage(c, "/", http.StatusOK); strings.Contains(body, `href="/author/`) || strings.Contains(body, ` in <a href="/c/`) {
-		t.Error("card bylines must stay plain text (the card is already a link)")
+	// The card's head isn't one big link any more (links can't nest).
+	if body := ts.checkPage(c, "/", http.StatusOK); strings.Contains(body, `class="pick-card-body pick-card-head"`) &&
+		strings.Contains(body, `<a href="`+ts.pick+`" class="pick-card-body pick-card-head">`) {
+		t.Error("card head is still a link around the byline")
 	}
 	ts.checkPage(c, "/author/admin", http.StatusOK)
 
-	// Auto posts show the label, without a link.
+	// Auto posts: the label links to the page of all auto posts.
 	admin, _ := ts.srv.Users.GetByUsername("admin")
 	id, err := ts.srv.Picks.Create(&models.Pick{Slug: "auto", Title: "Auto", Excerpt: "E", AutoIngested: true,
 		CategoryID: ts.catID, CuratorID: admin.ID, SourceType: models.SourceTypeLocal, Status: models.PickStatusPublished,
@@ -417,11 +421,41 @@ func TestPostPageBylineLinks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	body = ts.checkPage(c, fmt.Sprintf("/p/%d-auto", id), http.StatusOK)
-	if strings.Contains(body, `By <a href="/author/`) {
-		t.Error("auto post byline links to the admin's author page")
+	body := ts.checkPage(c, fmt.Sprintf("/p/%d-auto", id), http.StatusOK)
+	if !strings.Contains(body, `By <a class="byline-link" href="/auto">Auto post</a>`) || strings.Contains(body, `href="/author/admin"`) {
+		t.Error("auto post byline should link the label to /auto, not the admin")
 	}
-	if !strings.Contains(body, ` in <a href="/c/news">News</a>`) {
-		t.Error("auto post byline doesn't link the category")
+	auto := ts.checkPage(c, "/auto", http.StatusOK)
+	if !strings.Contains(auto, "Posts by Auto post") || !strings.Contains(auto, ">Auto</a>") || strings.Contains(auto, "Hello world") {
+		t.Error("/auto should list the auto posts only")
+	}
+	ts.checkPage(c, "/auto?page=2", http.StatusNotFound)
+	if body := ts.checkPage(c, "/sitemap.xml", http.StatusOK); !strings.Contains(body, "/auto</loc>") {
+		t.Error("sitemap lacks the auto posts page")
+	}
+}
+
+func TestAutoPostsAreNotTheAdminsOwn(t *testing.T) {
+	ts := newTestSite(t)
+	curator, _ := ts.srv.Users.GetByUsername("curator")
+	id, err := ts.srv.Picks.Create(&models.Pick{Slug: "auto-only", Title: "Auto only", Excerpt: "E", AutoIngested: true,
+		CategoryID: ts.catID, CuratorID: curator.ID, SourceType: models.SourceTypeLocal, Status: models.PickStatusPublished,
+		PublishedAt: sql.NullString{String: time.Now().UTC().Format(time.RFC3339), Valid: true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := ts.client("")
+	if body := ts.checkPage(c, "/author/curator", http.StatusOK); strings.Contains(body, "Auto only") {
+		t.Error("auto post listed on the author page")
+	}
+	if body := ts.checkPage(c, "/sitemap.xml", http.StatusOK); strings.Contains(body, "/author/curator</loc>") {
+		t.Error("author with only auto posts listed in the sitemap")
+	}
+	if body := ts.checkPage(c, fmt.Sprintf("/p/%d-auto-only", id), http.StatusOK); strings.Contains(body, `"@type":"Person"`) {
+		t.Error("auto post names the admin as its author in JSON-LD")
+	}
+	// The curator's own picks still show.
+	if body := ts.checkPage(c, "/author/admin", http.StatusOK); !strings.Contains(body, "Hello world") {
+		t.Error("author page lost the admin's own pick")
 	}
 }

@@ -1,13 +1,20 @@
 # Changelog
 
-## Unreleased
+## 0.1.4
+
+**Added**
+- Bylines on cards and post pages link the curator's name to their author
+  page and each category to its page. Author pages existed (and were in
+  the sitemap) but nothing on the site linked to them. On cards the title
+  is now the link to the post, instead of the title and byline together.
+- Auto posts have their own page, `/auto` ("Posts by Auto post", following
+  the label set in Site settings), linked from their byline label and
+  listed in the sitemap.
 
 **Fixes**
-- The byline on a post page links the curator's name to their author
-  page and each category to its page. Author pages existed (and were in
-  the sitemap) but nothing on the site linked to them. Cards keep a
-  plain-text byline, since the whole card is already a link, and auto
-  posts keep their label without a link.
+- Auto posts are no longer listed on the author page of the admin who set
+  up their source, nor counted for that author in the sitemap or named as
+  the post's author in its structured data.
 
 ## 0.1.3
 

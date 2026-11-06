@@ -190,9 +190,17 @@ func (s *Server) HandleSitemap(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, err)
 		return
 	}
-	hasPicks := map[int64]bool{}
+	hasPicks := map[int64]bool{} // authors with picks of their own (not auto posts)
+	hasAuto := false
 	for _, p := range picks {
-		hasPicks[p.CuratorID] = true
+		if p.AutoIngested {
+			hasAuto = true
+		} else {
+			hasPicks[p.CuratorID] = true
+		}
+	}
+	if hasAuto {
+		set.URLs = append(set.URLs, sitemapURL{Loc: base + autoPostsPath})
 	}
 	authors, err := s.Users.List()
 	if err != nil {

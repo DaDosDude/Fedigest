@@ -82,9 +82,6 @@ type pickCard struct {
 	Curator  *models.User       // nil if the lookup failed
 	Category *models.Category   // nil if the lookup failed or hidden
 	Extra    []*models.Category // extra categories, shown after Category
-	// LinkByline is always false on cards: the card is already one link,
-	// so its byline can't hold others (see pick_byline).
-	LinkByline bool
 }
 
 // attachCurators resolves curators and categories once per distinct ID,
@@ -273,6 +270,51 @@ func (s *Server) HandleCategoryPage(w http.ResponseWriter, r *http.Request, slug
 	})
 }
 
+// autoPostsPath is the auto-post label's page: every auto post, like an
+// author page for the poller. Not under /author/, where a user could have
+// the same name.
+const autoPostsPath = "/auto"
+
+// autoPostLabel is the byline label of auto posts ("Auto post" by default).
+func (s *Server) autoPostLabel() string {
+	if ss, err := s.SiteSettings.Get(); err == nil && ss.AutoPostLabel != "" {
+		return ss.AutoPostLabel
+	}
+	return "Auto post"
+}
+
+// HandleAutoPostsPage lists the published auto posts, newest first.
+func (s *Server) HandleAutoPostsPage(w http.ResponseWriter, r *http.Request) {
+	page := parsePage(r)
+	picks, err := s.Picks.ListPublishedAuto(page)
+	if err != nil {
+		s.serverError(w, err)
+		return
+	}
+	if page > 1 && len(picks) == 0 {
+		s.notFound(w, r)
+		return
+	}
+	cats, err := s.Categories.List()
+	if err != nil {
+		s.serverError(w, err)
+		return
+	}
+	label := s.autoPostLabel()
+	s.render(w, "frontpage.html", frontpageData{
+		SiteName:      s.siteName(),
+		Picks:         s.attachCurators(r, picks, false),
+		Categories:    cats,
+		SidebarBlocks: s.sidebarBlocks(),
+		Page:          page,
+		HasNext:       len(picks) == models.PicksPerPage,
+		BasePath:      autoPostsPath,
+		PageTitle:     "Posts by " + label,
+		Head:          s.newSEOHead(r, "Posts by "+label, "Posts added automatically from the communities this site follows.", pagedPath(autoPostsPath, page)),
+		CurrentUser:   auth.UserFromContext(r.Context()),
+	})
+}
+
 func (s *Server) HandleAuthorPage(w http.ResponseWriter, r *http.Request, username string) {
 	author, err := s.Users.GetByUsername(username)
 	if err != nil {
@@ -312,7 +354,6 @@ func (s *Server) HandleAuthorPage(w http.ResponseWriter, r *http.Request, userna
 type postPageData struct {
 	*models.Pick
 	CanEdit       bool // the logged-in user may edit this pick
-	LinkByline    bool // the byline's curator and categories are links
 	SiteName      string
 	Categories    []*models.Category
 	SidebarBlocks []*models.SidebarBlock
@@ -361,8 +402,8 @@ func (s *Server) HandlePostPage(w http.ResponseWriter, r *http.Request, id int64
 
 	curator, _ := s.Users.GetByID(pick.CuratorID)        // nil on error
 	category, _ := s.Categories.GetByID(pick.CategoryID) // nil on error
-	curatorName := ""
-	if curator != nil {
+	curatorName := ""                                    // the JSON-LD author; an auto post isn't its admin's
+	if curator != nil && !pick.AutoIngested {
 		curatorName = curator.DisplayNameOrUsername()
 	}
 
@@ -373,7 +414,6 @@ func (s *Server) HandlePostPage(w http.ResponseWriter, r *http.Request, id int64
 
 	data := postPageData{
 		Pick:          pick,
-		LinkByline:    true,
 		SiteName:      s.siteName(),
 		Categories:    cats,
 		SidebarBlocks: s.sidebarBlocks(),

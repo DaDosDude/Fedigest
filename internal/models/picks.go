@@ -136,7 +136,9 @@ func (s *PickStore) listPublished(categoryID, curatorID *int64, frontpageOnly, e
 		args = append(args, *categoryID, *categoryID)
 	}
 	if curatorID != nil {
-		query += ` AND curator_id = ?`
+		// An author page lists what that person picked; auto posts are
+		// filed under the source's admin but aren't theirs.
+		query += ` AND curator_id = ? AND auto_ingested = 0`
 		args = append(args, *curatorID)
 	}
 	if frontpageOnly {
@@ -155,6 +157,29 @@ func (s *PickStore) listPublished(categoryID, curatorID *int64, frontpageOnly, e
 	}
 	defer rows.Close()
 
+	var out []*Pick
+	for rows.Next() {
+		p, err := scanPick(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// ListPublishedAuto returns a page of published auto posts, newest first:
+// the auto-post label's own page.
+func (s *PickStore) ListPublishedAuto(page int) ([]*Pick, error) {
+	if page < 1 {
+		page = 1
+	}
+	rows, err := s.DB.Query(`SELECT `+pickListColumns+` FROM picks WHERE status = 'published' AND auto_ingested = 1
+		ORDER BY published_at DESC LIMIT ? OFFSET ?`, PicksPerPage, (page-1)*PicksPerPage)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 	var out []*Pick
 	for rows.Next() {
 		p, err := scanPick(rows)
@@ -472,16 +497,17 @@ func (s *PickStore) PublishDue(now time.Time) (int64, error) {
 
 // PickRef is the little the sitemap needs about a published pick.
 type PickRef struct {
-	ID        int64
-	Slug      string
-	CuratorID int64
-	UpdatedAt string
+	ID           int64
+	Slug         string
+	CuratorID    int64
+	AutoIngested bool
+	UpdatedAt    string
 }
 
-// ListPublishedRefs returns every published pick's ID, slug, curator and
-// last update, newest first.
+// ListPublishedRefs returns every published pick's ID, slug, curator,
+// whether it's an auto post, and last update, newest first.
 func (s *PickStore) ListPublishedRefs() ([]PickRef, error) {
-	rows, err := s.DB.Query(`SELECT id, slug, curator_id, updated_at FROM picks WHERE status = 'published' ORDER BY published_at DESC`)
+	rows, err := s.DB.Query(`SELECT id, slug, curator_id, auto_ingested, updated_at FROM picks WHERE status = 'published' ORDER BY published_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +515,7 @@ func (s *PickStore) ListPublishedRefs() ([]PickRef, error) {
 	var out []PickRef
 	for rows.Next() {
 		var p PickRef
-		if err := rows.Scan(&p.ID, &p.Slug, &p.CuratorID, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Slug, &p.CuratorID, &p.AutoIngested, &p.UpdatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

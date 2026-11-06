@@ -31,6 +31,8 @@
 		.pick-edit-link, .post-edit-link { display: inline-block; font-size: 0.85rem; }
 		.pick-card .pick-edit-link { margin-top: 0.4rem; }
 		.pick-card .pick-card-link-out + .pick-edit-link { margin-left: 0.75rem; }
+		.pick-byline .byline-link { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
+		.pick-byline .byline-link:hover { color: var(--color-accent); }
 		.footer-powered, .footer-links { white-space: nowrap; }
 		@media (max-width: 480px) { .footer-powered { display: block; } .footer-sep-group { display: none; } }
 		.pick-read-more { display: inline-block; margin: 0.4rem 0.75rem 0 0; font-size: 0.9rem; font-weight: 600; color: var(--color-accent); }
@@ -138,13 +140,15 @@
 
 {{define "pick_card"}}
 <li class="pick-card{{if .Pinned}} pick-card-pinned{{end}}">
-	{{/* The image sits between two links, not inside one, since its
-	"View full image" button can't be nested in a link. */}}
-	<a href="/p/{{.ID}}-{{.Slug}}" class="pick-card-body pick-card-head">
+	{{/* The title is the post link and the byline has its own links
+	(curator, categories), so the head isn't one big link. The image
+	sits between links, not inside one, since its "View full image"
+	button can't be nested in a link. */}}
+	<div class="pick-card-body pick-card-head">
 		{{if .Pinned}}<span class="pinned-label">📌 Pinned</span>{{end}}
-		<h2>{{.Title}}</h2>
+		<h2><a href="/p/{{.ID}}-{{.Slug}}" class="pick-card-title">{{.Title}}</a></h2>
 		{{template "pick_byline" .}}
-	</a>
+	</div>
 	{{$img := .DisplayImage "/uploads"}}
 	{{if $img}}
 	<div class="pick-card-image-wrap">
@@ -264,23 +268,23 @@
 </html>
 {{end}}
 
-{{/* pick_byline takes a pickCard or postPageData. On cards it's plain
-     text, since the card is already a link; on the post page
-     (.LinkByline) the curator's name links to their author page and the
+{{/* pick_byline takes a pickCard or postPageData (it must never sit
+     inside a link). The curator's name links to their author page, the
      categories to their pages. Auto-ingested picks show the configurable
-     auto-post label rather than the source admin's name, with no link. */}}
-{{/* byline_categories: " in Main, Extra" (links on the post page). */}}
-{{define "byline_categories"}}{{if .Category}} in {{if .LinkByline}}<a href="{{categoryURL .Category}}">{{.Category.Name}}</a>{{range .Extra}}, <a href="{{categoryURL .}}">{{.Name}}</a>{{end}}{{else}}{{.Category.Name}}{{range .Extra}}, {{.Name}}{{end}}{{end}}{{end}}{{end}}
+     auto-post label rather than the source admin's name, linking to the
+     page of all auto posts. */}}
+{{/* byline_categories: " in Main, Extra", each a link. */}}
+{{define "byline_categories"}}{{if .Category}} in <a class="byline-link" href="{{categoryURL .Category}}">{{.Category.Name}}</a>{{range .Extra}}, <a class="byline-link" href="{{categoryURL .}}">{{.Name}}</a>{{end}}{{end}}{{end}}
 
 {{define "pick_byline"}}
 <div class="pick-byline">
 	{{if .AutoIngested}}
 	{{/* Auto-ingested: the admin-set label and the default icon. */}}
 	<img src="/static/default-icon.png" alt="" class="byline-avatar" width="20" height="20">
-	<span class="byline-curator">By {{autoPostLabel}} <span class="byline-date">{{.DisplayDate}}</span>{{template "byline_categories" .}}</span>
+	<span class="byline-curator">By <a class="byline-link" href="{{autoPostsURL}}">{{autoPostLabel}}</a> <span class="byline-date">{{.DisplayDate}}</span>{{template "byline_categories" .}}</span>
 	{{else if .Curator}}
 	<img src="{{userAvatar .Curator}}" alt="" class="byline-avatar" width="20" height="20">
-	<span class="byline-curator">By {{if .LinkByline}}<a href="{{authorURL .Curator}}">{{.Curator.DisplayNameOrUsername}}</a>{{else}}{{.Curator.DisplayNameOrUsername}}{{end}} <span class="byline-date">{{.DisplayDate}}</span>{{template "byline_categories" .}}</span>
+	<span class="byline-curator">By <a class="byline-link" href="{{authorURL .Curator}}">{{.Curator.DisplayNameOrUsername}}</a> <span class="byline-date">{{.DisplayDate}}</span>{{template "byline_categories" .}}</span>
 	{{end}}
 	{{if eq (print .SourceType) "fedi"}}
 		{{if or .OriginalAuthor.Valid .OriginalCommunity.Valid}}

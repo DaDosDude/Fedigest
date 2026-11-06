@@ -32,6 +32,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /c/{slug}", func(w http.ResponseWriter, r *http.Request) {
 		s.HandleCategoryPage(w, r, r.PathValue("slug"))
 	})
+	mux.HandleFunc("GET "+autoPostsPath, s.HandleAutoPostsPage)
 	mux.HandleFunc("GET /author/{username}", func(w http.ResponseWriter, r *http.Request) {
 		s.HandleAuthorPage(w, r, r.PathValue("username"))
 	})
